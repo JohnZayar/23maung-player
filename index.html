@@ -10,6 +10,10 @@
   body { font-family: "Myanmar Text", "Pyidaungsu", sans-serif; background: #e8e8e8; color: #222; }
   .phone { max-width: 430px; margin: 0 auto; background: #e0f2fe; min-height: 100vh; position: relative; padding-bottom: 64px; }
   .demo-bar { background: #f59e0b; color: #3a2a00; text-align: center; font-size: 13px; padding: 6px 10px; font-weight: bold; }
+  .phone.fb .demo-bar, .phone.fb .userbar { display: none; }
+  .fb-top { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .fb-top h3 { font-size: 17px; flex: 1; }
+  .fb-bal-amt { font-size: 16px; font-weight: bold; color: #0369a1; white-space: nowrap; }
   .userbar { background: #0284c7; color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
   .avatar { width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #0284c7; font-weight: bold; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .userbar .uname { font-size: 18px; font-weight: bold; }
@@ -232,7 +236,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v1.0 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v1.1 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -276,7 +280,7 @@
 
   <!-- မောင်း -->
   <div class="screen" id="scr-maung">
-    <div class="card" style="margin-bottom:10px"><div class="row bet-head"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>မောင်း (<span id="maungCount">9</span>)</h3><span class="muted">ကြေး ရွေးပြီး ထိုးမယ်</span></div></div>
+    <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>မောင်း (<span id="maungCount">9</span>)</h3><span class="fb-bal-amt">50,000</span></div>
     <div id="maungList"></div>
     <div class="fb-bar">
       <div class="fb-chips">
@@ -299,7 +303,7 @@
 
   <!-- ဘော်ဒီ -->
   <div class="screen" id="scr-body">
-    <div class="card" style="margin-bottom:10px"><div class="row bet-head"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>ဘော်ဒီ/ဂိုးပေါင်း (<span id="bodyCount">9</span>)</h3><span class="muted">ကြေး ရွေးပြီး ထိုးမယ် · <a href="#" onclick="go('scr-results');return false" style="color:#0369a1;font-weight:bold">ပွဲရလဒ် →</a></span></div></div>
+    <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>ဘော်ဒီ/ဂိုးပေါင်း (<span id="bodyCount">9</span>)</h3><span class="fb-bal-amt">50,000</span></div>
     <div id="bodyList"></div>
     <div class="fb-bar">
       <div class="fb-controls">
@@ -1291,6 +1295,8 @@
     document.querySelectorAll('nav button').forEach(function(b){
       b.classList.toggle('on', b.dataset.scr === id || (b.dataset.scr === 'scr-home' && (id === 'scr-2d' || id === 'scr-2d-confirm' || id === 'scr-3d' || id === 'scr-3d-confirm' || id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-vouch')));
     });
+    var box = document.getElementById('phoneBox');
+    if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results');
     window.scrollTo(0,0);
   }
 
