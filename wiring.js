@@ -372,6 +372,22 @@
   }
   M23.refreshData = refreshData;
 
+  // Auto-refresh (Pho Nov 13): poll the server so new records (approvals,
+  // settlements, odds) appear without a manual refresh. Every 30s, only
+  // while the tab is visible; also refreshes once when the tab becomes
+  // visible again.
+  function startAutoRefresh() {
+    if (M23._autoTimer) return;
+    M23._autoTimer = setInterval(function () {
+      if (!M23.player || document.hidden) return;
+      refreshData();
+      refreshFixtures();
+    }, 30000);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && M23.player) { refreshData(); refreshFixtures(); }
+    });
+  }
+
   async function loadAll() {
     var me = PB.getModel();
     if (!me) return false;
@@ -389,6 +405,7 @@
     M23.loaded = true;
     updateUserDisplays();
     renderTotals();
+    startAutoRefresh();
     return true;
   }
   M23.loadAll = loadAll;
