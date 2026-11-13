@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>23မောင်း — 2D • 3D • ဘောလုံး</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Myanmar Text", "Pyidaungsu", sans-serif; background: #e8e8e8; color: #222; }
+  .phone { max-width: 430px; margin: 0 auto; background: #e0f2fe; min-height: 100vh; position: relative; padding-bottom: 64px; }
+  .demo-bar { background: #f59e0b; color: #3a2a00; text-align: center; font-size: 13px; padding: 6px 10px; font-weight: bold; }
+  .userbar { background: #0284c7; color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #0284c7; font-weight: bold; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .userbar .uname { font-size: 18px; font-weight: bold; }
+  .userbar .wallet { margin-left: auto; text-align: right; }
+  .userbar .wallet .amt { font-size: 20px; font-weight: bold; color: #fde047; }
+  .plus-btn { background: #fde047; color: #713f12; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 18px; font-weight: bold; cursor: pointer; vertical-align: middle; margin-left: 6px; }
+  .screen { display: none; padding: 14px 14px 10px; }
+  .screen.active { display: block; }
+  .card { background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card h3 { font-size: 16px; margin-bottom: 8px; }
+  .muted { color: #666; font-size: 13px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .big-num { font-size: 34px; font-weight: bold; letter-spacing: 4px; color: #14532d; }
+  .badge { display: inline-block; font-size: 12px; padding: 3px 9px; border-radius: 12px; }
+  .badge.open { background: #dcfce7; color: #166534; }
+  .badge.closed { background: #fee2e2; color: #991b1b; }
+  .badge.wait { background: #fef3c7; color: #92400e; }
+  .badge.win { background: #dcfce7; color: #166534; }
+  .badge.lose { background: #f1f5f9; color: #64748b; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid2 .game-btn { padding: 18px 10px; font-size: 20px; border-radius: 14px; white-space: nowrap; }
+  .game-btn { border: none; border-radius: 16px; padding: 26px 10px; font-size: 22px; font-weight: bold; font-family: inherit; cursor: pointer; color: #fde047; background: #1e3a5f; box-shadow: 0 3px 6px rgba(0,0,0,.2); }
+  .game-btn small { display: block; font-size: 12px; font-weight: normal; opacity: .85; margin-top: 4px; color: #fff; }
+  .game-btn:active { transform: scale(.97); }
+  .btn-red { background: #d92b2b; color: #fff; border: none; border-radius: 12px; padding: 14px; width: 100%; font-size: 18px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .btn-red:disabled { background: #cbd5e1; color: #64748b; }
+  .btn-green { background: #14532d; color: #fff; border: none; border-radius: 12px; padding: 13px; width: 100%; font-size: 17px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .btn-ghost { background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px; font-size: 14px; font-family: inherit; cursor: pointer; }
+  .num-display { background: #fff; border: 2px solid #14532d; border-radius: 12px; text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 8px; padding: 10px; margin-bottom: 10px; min-height: 64px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .pad button { border: none; background: #fff; border-radius: 10px; padding: 14px; font-size: 20px; font-weight: bold; font-family: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .pad button:active { background: #dcfce7; }
+  .amt-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .amt-row button { flex: 1; min-width: 70px; border: 1px solid #cbd5e1; background: #fff; border-radius: 10px; padding: 10px 4px; font-size: 14px; font-family: inherit; cursor: pointer; }
+  .amt-row button.on { background: #14532d; color: #fff; border-color: #14532d; font-weight: bold; }
+  .bet3 { display: flex; gap: 8px; }
+  .bet-box { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 8px 6px; font-family: inherit; cursor: pointer; text-align: center; color: #e2e8f0; }
+  .bet-box.on { border-color: #38bdf8; }
+  .bet-box .blbl { display: block; font-size: 12px; color: #94a3b8; }
+  .bet-box .bval { display: block; font-size: 22px; font-weight: bold; letter-spacing: 2px; min-height: 28px; color: #fff; }
+  .bet-box.rev-on { background: #2563eb; border-color: #2563eb; }
+  .bet-box.rev-on .blbl { color: #bfdbfe; }
+  .bet-box.dim { opacity: .55; }
+  .rbtn { flex: 0 0 54px; background: #2563eb; color: #fff; border: none; border-radius: 12px; font-size: 24px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .rbtn.on { background: #d92b2b; }
+  .ledger { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .ledger th { font-size: 12px; color: #94a3b8; text-align: left; padding: 4px 6px; border-bottom: 1px solid #cbd5e1; }
+  .ledger td { padding: 4px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .ledger td.num { width: 44%; }
+  .ledger td.amt { width: 26%; }
+  .ledger td.rev { width: 22%; }
+  .lcell { display: block; width: 100%; background: #fff; border: 2px solid #cbd5e1; border-radius: 10px; padding: 10px 8px; font-size: 16px; font-weight: bold; font-family: inherit; cursor: pointer; text-align: center; color: #0f172a; min-height: 44px; }
+  .lcell.on { border-color: #38bdf8; background: #f0f9ff; }
+  .lcell.rev-on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .lcell.dim { opacity: .55; }
+  .ldel { background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px 6px; font-family: inherit; }
+  .btn-add { width: 100%; background: #f0fdf4; border: 1px dashed #86efac; color: #166534; border-radius: 10px; padding: 9px; font-size: 14px; font-weight: bold; font-family: inherit; cursor: pointer; margin-bottom: 4px; }
+  .board { display: flex; align-items: center; gap: 8px; background: #1e293b; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .board .blbl { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  .board .bval { flex: 1; font-size: 20px; font-weight: bold; letter-spacing: 2px; color: #fff; min-height: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board .rbtn { flex: 0 0 44px; padding: 6px 0; font-size: 18px; }
+  .vlist { margin-top: 10px; }
+  .grid2d { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: #16213a; border-radius: 0; padding: 8px; margin: 0 -14px 10px; }
+  .grid2d button { border: 1px solid #334155; background: #243044; border-radius: 8px; padding: 7px 0; font-size: 18px; font-weight: bold; font-family: inherit; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .grid2d .gn { font-size: 18px; font-weight: bold; line-height: 1.1; }
+  .grid2d button.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .grid2d button.full { background: #d92b2b; border-color: #d92b2b; color: #fff; cursor: not-allowed; }
+  .grid3d { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 4px 0 8px; }
+  .grid3d button { border: 1px solid #7e22ce; background: #ede9fe; border-radius: 8px; padding: 8px 0; font-size: 17px; font-weight: bold; font-family: inherit; cursor: pointer; color: #6b21a8; }
+  .grid3d button.on { background: #7e22ce; border-color: #7e22ce; color: #fff; }
+  .grid3d button.full { background: #d92b2b; border-color: #d92b2b; color: #fff; cursor: not-allowed; }
+  .grid3d button.hide { display: none; }
+  .digit3d { display: flex; gap: 6px; margin-bottom: 8px; }
+  .digit3d select { flex: 1; background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 8px; padding: 10px 4px; font-size: 20px; font-weight: bold; font-family: inherit; color: #4c1d95; text-align: center; }
+  .digit3d .rbtn3d { flex: 2; background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 8px; padding: 10px 4px; font-size: 16px; font-weight: bold; font-family: inherit; color: #4c1d95; cursor: pointer; }
+  .digit3d .rbtn3d.on { background: #7e22ce; border-color: #7e22ce; color: #fff; }
+  #scr-3d { padding-bottom: 232px; }
+  #scr-3d-confirm { padding-bottom: 140px; }
+  #scr-body-confirm { padding-bottom: 140px; }
+  .fb-amt-input { flex: 1; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 10px; padding: 12px 10px; font-size: 18px; font-weight: bold; font-family: inherit; color: #1e3a5f; text-align: center; min-width: 0; }
+  .plus-btn { flex: 0 0 44px; background: #16a34a; color: #fff; border: none; border-radius: 12px; font-size: 24px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .temp-hide { display: none; }
+  .pay-opt { display: flex; gap: 8px; margin-bottom: 12px; }
+  .pay-opt button { flex: 1; border: 2px solid #cbd5e1; background: #fff; border-radius: 12px; padding: 14px 6px; font-size: 16px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .pay-opt button.on { border-color: #14532d; background: #f0fdf4; }
+  input[type=number], input[type=text], input[type=password] { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; font-size: 16px; font-family: inherit; margin-bottom: 10px; }
+  .terms-list { font-size: 14px; line-height: 1.7; color: #334155; padding-left: 18px; margin: 0; }
+  .terms-list li { margin-bottom: 8px; }
+  .hist-row { display: flex; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+  .hist-row:last-child { border-bottom: none; }
+  .vouch { border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+  .vouch .vhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-weight: bold; }
+  .vouch .vrow { display: flex; justify-content: space-between; padding: 2px 0; font-size: 15px; }
+  .vtab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: 6px 4px; font-size: 15px; font-family: inherit; cursor: pointer; color: #64748b; }
+  .vtab.on { color: #1e3a5f; border-bottom-color: #1e3a5f; font-weight: bold; }
+  .vouch .vno { font-weight: bold; color: #0369a1; font-size: 15px; padding: 4px 0 2px; }
+  .vouch .vtot { display: flex; justify-content: space-between; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; font-weight: bold; }
+  /* ငွေစာရင်း Ball tab — Maung ပုံစံ (Pho Nov 12: Total + ✅/✖️) */
+  .ltab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: 6px 4px; font-size: 15px; font-family: inherit; cursor: pointer; color: #64748b; }
+  .ltab.on { color: #7c3aed; border-bottom-color: #7c3aed; font-weight: bold; }
+  .ball-time { background: #cffafe; padding: 8px 10px; font-size: 17px; display: flex; justify-content: space-between; align-items: center; }
+  .ball-tbl { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .ball-tbl th { font-size: 15px; padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+  .ball-tbl td { padding: 6px 4px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  .ball-tot { display: flex; justify-content: space-between; padding: 8px 4px; font-size: 17px; }
+  .ball-tot .mk { color: #16a34a; font-weight: bold; }
+  .sect { font-size: 15px; font-weight: bold; color: #0e7490; margin: 16px 2px 8px; }
+  .league { font-size: 12px; font-weight: bold; color: #334155; margin: 4px 2px 2px; }
+  .res-league { font-size: 13px; font-weight: bold; color: #1d4ed8; margin: 10px 2px 4px; }
+  .res-win { font-size: 12px; font-weight: bold; color: #166534; background: #dcfce7; padding: 3px 8px; text-align: center; border-top: 1px solid #bbf7d0; }
+  .res-match { background: #fff; border: 1px solid #94a3b8; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
+  .res-teams { display: flex; align-items: center; padding: 6px 8px; font-size: 13px; }
+  .res-teams .rn { width: 22px; color: #64748b; flex-shrink: 0; }
+  .res-teams .tn { flex: 1; min-width: 0; }
+  .res-score { background: #dc2626; color: #fff; border-radius: 4px; padding: 2px 8px; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+  .res-odds { display: flex; align-items: center; padding: 4px 8px 6px; font-size: 12px; color: #334155; border-top: 1px solid #e2e8f0; }
+  .res-odds .ro { flex: 1; min-width: 0; }
+  .res-odds .gp { flex: 1; text-align: center; color: #0369a1; font-weight: bold; }
+  .ro { color: #d92b2b; font-weight: bold; }
+  .vs { color: #64748b; font-size: 12px; }
+  .pk { background: #dcfce7; color: #166534; padding: 1px 6px; border-radius: 4px; font-weight: bold; }
+  .match { background: #fff; border: 1px solid #94a3b8; border-radius: 6px; margin-bottom: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .bet-head { flex-wrap: wrap; row-gap: 2px; }
+  .bet-head .muted { white-space: nowrap; }
+  .mhead { background: #22c55e; color: #fff; padding: 1px 6px; font-size: 10px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 1px solid #15803d; }
+  .match.closed { opacity: .55; }
+  .match.closed .mhead { background: #64748b; border-bottom-color: #475569; }
+  .mbody { display: flex; align-items: stretch; }
+  .mteams { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .mteam { flex: 1; display: flex; align-items: center; padding: 2px 6px; font-size: 11px; gap: 5px; cursor: pointer; }
+  .tlogo { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+  .mteam + .mteam { border-top: 1px solid #cbd5e1; }
+  .mteam.on { background: #d92b2b; color: #fff; }
+  .mhcp { width: 52px; display: flex; flex-direction: column; flex-shrink: 0; border-left: 1px solid #cbd5e1; }
+  .mhcp .cell { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1px; }
+  .mhcp .cell + .cell { border-top: 1px solid #cbd5e1; }
+  .mgoal { width: 60px; display: flex; flex-direction: column; border-left: 1px solid #cbd5e1; flex-shrink: 0; }
+  .gcell { flex: 1; border: none; background: #fff; font-family: inherit; cursor: pointer; padding: 1px; font-size: 10px; color: #334155; }
+  .gcell + .gcell { border-top: 1px solid #cbd5e1; }
+  .gcell b { display: block; background: #334155; color: #fff; border-radius: 6px; padding: 1px; font-size: 10px; margin-top: 1px; }
+  .gcell.on { background: #d92b2b; color: #fff; }
+  .gcell.on b { background: #fff; color: #d92b2b; }
+  .odd { min-width: 40px; background: #334155; color: #fff; border: none; border-radius: 8px; padding: 2px 2px; font-size: 11px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .odd.on { background: #d92b2b; }
+  .odd.empty { background: transparent; box-shadow: none; }
+  .odd.empty.on { background: #d92b2b; }
+  .fb-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; padding: 8px 12px 10px; box-shadow: 0 -2px 10px rgba(0,0,0,.14); z-index: 9; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .fb-controls { display: flex; gap: 8px; align-items: center; }
+  .fb-chips { display: flex; gap: 6px; }
+  .fb-chips button { flex: 1; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 8px; padding: 8px 4px; font-size: 14px; font-weight: bold; font-family: inherit; color: #1e3a5f; cursor: pointer; }
+  .fb-step { flex: 0 0 36px; width: 36px; height: 44px; border-radius: 10px; border: 1px solid #93c5fd; background: #fff; font-size: 20px; font-weight: bold; color: #1e3a5f; cursor: pointer; font-family: inherit; }
+  .amt-step { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .amt-step input { flex: 1; margin: 0; }
+  .amt-step .step-btn { flex: 0 0 44px; width: 44px; height: 44px; }
+  .amt-chips { display: flex; gap: 6px; margin-bottom: 12px; }
+  .amt-chips button { flex: 1; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 8px; padding: 10px 4px; font-size: 14px; font-weight: bold; font-family: inherit; color: #1e3a5f; cursor: pointer; }
+  .fb-bar input { margin: 0; flex: 1; background: #dbeafe; border-color: #93c5fd; }
+  .fb-bar select { margin: 0; flex: 1; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 10px; padding: 10px 8px; font-size: 15px; font-family: inherit; font-weight: bold; color: #1e3a5f; }
+  .fb-bar .btn-red { width: auto; padding: 10px 16px; font-size: 16px; white-space: nowrap; }
+  .fb-count { background: #e0f2fe; border: 1px solid #0284c7; color: #0369a1; border-radius: 10px; padding: 10px 8px; font-size: 14px; font-weight: bold; white-space: nowrap; min-width: 78px; text-align: center; }
+  #scr-maung, #scr-body { padding-bottom: 147px; }
+  #scr-2d { padding-bottom: 232px; }
+  .betbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; padding: 0; box-shadow: 0 -2px 10px rgba(0,0,0,.14); z-index: 9; display: flex; }
+  .bb-trash { flex: 1; background: #e2e8f0; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
+  .bb-count { flex: 1.5; background: #000; color: #fff; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+  .bb-next { flex: 1; background: #1e3a5f; color: #fff; border: none; font-size: 20px; font-weight: bold; padding: 14px 0; cursor: pointer; font-family: inherit; }
+  .confirm-table { width: 100%; border-collapse: collapse; background: #fff; }
+  .confirm-table th, .confirm-table td { border-bottom: 1px solid #e2e8f0; padding: 12px 8px; text-align: center; font-size: 16px; }
+  .confirm-table th:first-child, .confirm-table td:first-child { text-align: left; width: 44px; }
+  .confirm-table td:nth-child(2) { font-weight: bold; white-space: nowrap; font-size: 15px; }
+  .confirm-table select { width: 100%; font-size: 16px; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; text-align: center; background: #fff; }
+  .step-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #94a3b8; background: #fff; font-size: 18px; cursor: pointer; font-family: inherit; line-height: 1; }
+  .camt { display: inline-block; min-width: 56px; font-size: 18px; font-weight: bold; text-align: center; }
+  .rate-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: bold; }
+  .amt-cell { display: inline-flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; }
+  .camt-input { width: 64px; font-size: 18px; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 2px; font-family: inherit; }
+  .confirm-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; padding: 0; box-shadow: 0 -2px 10px rgba(0,0,0,.14); z-index: 9; display: flex; }
+  .cb-trash { flex: 1; background: #e2e8f0; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
+  .cb-ok { flex: 1; background: #1e3a5f; color: #fff; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
+  #scr-2d-confirm { padding-bottom: 140px; }
+  .bet-actions { display: flex; gap: 8px; }
+  .bet-actions button { flex: 1; border-radius: 10px; padding: 10px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .bet-actions .btn-cancel { background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+  .bet-actions .btn-save { background: #d92b2b; border: none; color: #fff; }
+  .bet-actions .btn-save:disabled { background: #cbd5e1; color: #64748b; }
+  nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #1e3a5f; display: flex; z-index: 10; height: 56px; }
+  nav button { flex: 1; border: none; background: none; padding: 0 2px; font-size: 15px; font-family: inherit; color: #d8b4fe; cursor: pointer; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  nav button.on { color: #fde047; font-weight: bold; }
+  nav button .ic { display: block; width: 20px; height: 20px; margin: 0 auto 2px; border-radius: 4px; background: #a78bfa; }
+  nav button.on .ic { background: #fde047; }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 260px; background: #1e293b; color: #fff; padding: 11px 18px; border-radius: 24px; font-size: 14px; display: none; z-index: 20; max-width: 90%; text-align: center; }
+  .note { background: #fef9c3; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #713f12; margin-bottom: 12px; }
+  .menu-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.08); cursor: pointer; border: none; width: 100%; font-family: inherit; text-align: left; }
+  .ribbon { display: inline-block; background: #d92b2b; color: #fff; font-weight: bold; font-size: 18px; padding: 6px 26px; border-radius: 4px; margin-top: -14px; position: relative; }
+  .prow { display: flex; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid #e2e8f0; font-size: 15px; text-align: left; }
+  .prow:last-of-type { border-bottom: none; }
+  .phone.logged-out { padding-bottom: 0; }
+  .phone.logged-out nav { display: none; }
+  #scr-login { background: #00bcd4; padding: 0; min-height: 100vh; }
+  #scr-login.active { display: flex; flex-direction: column; }
+  .login-card { background: #7b1fa2; border-radius: 36px; margin: 18px 16px 14px; padding: 26px 20px 22px; text-align: center; }
+  .login-logo { width: 110px; height: 110px; background: #16233f; border-radius: 24px; margin: 0 auto 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+  .login-logo b { font-size: 30px; letter-spacing: 1px; }
+  .login-logo span { font-size: 11px; color: #fde047; margin-top: 2px; }
+  .login-field { display: flex; background: #00e5ff; }
+  .login-field label { width: 44%; text-align: right; padding: 13px 10px 13px 0; font-weight: bold; font-size: 18px; color: #111; }
+  .login-field input { flex: 1; border: none; background: transparent; padding: 13px 10px 13px 0; font-size: 17px; font-family: inherit; margin: 0; }
+  .login-field input:focus { outline: none; }
+  .login-remember { color: #fff; font-weight: bold; font-size: 19px; margin: 14px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
+  .login-remember input { width: 20px; height: 20px; }
+  .login-signin { background: #00e5ff; color: #fff; border: none; border-radius: 999px; width: 100%; padding: 13px; font-size: 22px; font-weight: bold; font-family: inherit; cursor: pointer; }
+  .login-reg { color: #fff; font-size: 13px; margin-top: 12px; display: inline-block; cursor: pointer; text-decoration: underline; }
+  .ticker { background: #fff; display: flex; align-items: center; gap: 8px; padding: 8px 10px; overflow: hidden; }
+  .ticker .tick-ic { color: #7b1fa2; font-weight: bold; flex-shrink: 0; }
+  .ticker .tick-wrap { overflow: hidden; flex: 1; }
+  .ticker .tick-text { display: inline-block; white-space: nowrap; color: #0e7490; font-size: 14px; animation: tickmove 24s linear infinite; }
+  @keyframes tickmove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .login-banner { flex: 1; width: 100%; object-fit: cover; min-height: 200px; display: block; }
+</style>
+</head>
+<body>
+<div class="phone" id="phoneBox">
+  <div class="demo-bar">23မောင်း v1.0 — 2D • 3D • ဘောလုံး</div>
+  <div class="userbar">
+    <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
+    <div>
+      <div class="uname">User001</div>
+      <div style="font-size:12px;opacity:.85">ပင်မလက်ကျန်ငွေ</div>
+    </div>
+    <div class="wallet">
+      <span class="amt" id="walletTop">50,000</span><button class="plus-btn" onclick="go('scr-money')">+</button>
+    </div>
+  </div>
+
+  <!-- login / အဖွင့်စာမျက်နှာ -->
+  <div class="screen" id="scr-login">
+    <div class="login-card">
+      <div class="login-logo" style="padding:0;overflow:hidden"><img src="logo.png" alt="23မောင်း" style="width:110px;height:110px;object-fit:cover;display:block"></div>
+      <div class="login-field"><label>Account:</label><input type="text" id="loginAcc" placeholder="account"></div>
+      <div class="login-field"><label>Password:</label><input type="password" id="loginPw" placeholder="password"></div>
+      <label class="login-remember">remember me <input type="checkbox" id="loginRem"></label>
+      <button class="login-signin" onclick="doLogin()">Sign In</button>
+      <a class="login-reg" onclick="toast('နမူနာပါ — အကောင့်ဖွင့်ဖို့ admin ကို ဆက်သွယ်ပါ')">အကောင့် မရှိသေးဘူးလား? အကောင့်ဖွင့်မယ်</a>
+    </div>
+    <div class="ticker">
+      <span class="tick-ic">▶</span>
+      <div class="tick-wrap"><span class="tick-text">ကြိုဆိုပါတယ် — 2D မနက်ပိုင်း 11:55 ပိတ်မယ် • 3D 16.11.2026 ပွဲစဉ် ဖွင့်နေတယ် • ငွေသွင်းရင် KBPay / WavePay နဲ့ လွှဲနိုင်တယ် • ကြိုဆိုပါတယ် — 2D မနက်ပိုင်း 11:55 ပိတ်မယ် • 3D 16.11.2026 ပွဲစဉ် ဖွင့်နေတယ် • ငွေသွင်းရင် KBPay / WavePay နဲ့ လွှဲနိုင်တယ် • </span></div>
+    </div>
+    <img class="login-banner" src="data:image/jpeg;base64,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" alt="ဘောလုံး">
+  </div>
+
+  <!-- home -->
+  <div class="screen active" id="scr-home">
+    <div class="grid2">
+      <button class="game-btn" onclick="go('scr-2d')">2D</button>
+      <button class="game-btn" onclick="go('scr-3d')">3D</button>
+      <button class="game-btn" onclick="go('scr-maung')">မောင်း</button>
+      <button class="game-btn" onclick="go('scr-body')">ဘော်ဒီ</button>
+      <button class="game-btn" onclick="go('scr-results')">ပွဲရလဒ်</button>
+      <button class="game-btn" onclick="go('scr-vouch')">ဘောက်ချာ</button>
+    </div>
+
+  </div>
+
+  <!-- မောင်း -->
+  <div class="screen" id="scr-maung">
+    <div class="card" style="margin-bottom:10px"><div class="row bet-head"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>မောင်း (<span id="maungCount">9</span>)</h3><span class="muted">ကြေး ရွေးပြီး ထိုးမယ်</span></div></div>
+    <div id="maungList"></div>
+    <div class="fb-bar">
+      <div class="fb-chips">
+        <button onclick="setAmt('fbAmt',500)">500</button>
+        <button onclick="setAmt('fbAmt',1500)">1500</button>
+        <button onclick="setAmt('fbAmt',2000)">2000</button>
+        <button onclick="setAmt('fbAmt',2500)">2500</button>
+        <button onclick="setAmt('fbAmt',3000)">3000</button>
+      </div>
+      <div class="fb-controls">
+        <span class="fb-count" id="fbSelChip">0 မောင်း</span>
+        <button class="fb-step" onclick="adjAmt('fbAmt',-500)">−</button>
+        <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ">
+        <button class="fb-step" onclick="adjAmt('fbAmt',500)">+</button>
+        <button class="btn-red" onclick="placeFb('မောင်း')">ထိုးမည်</button>
+      </div>
+    </div>
+    <div class="muted" style="text-align:center;margin-top:8px">ကြေး အမှန် — API က ယူထားတာ (Nov 21 ပွဲတွေ)</div>
+  </div>
+
+  <!-- ဘော်ဒီ -->
+  <div class="screen" id="scr-body">
+    <div class="card" style="margin-bottom:10px"><div class="row bet-head"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>ဘော်ဒီ/ဂိုးပေါင်း (<span id="bodyCount">9</span>)</h3><span class="muted">ကြေး ရွေးပြီး ထိုးမယ် · <a href="#" onclick="go('scr-results');return false" style="color:#0369a1;font-weight:bold">ပွဲရလဒ် →</a></span></div></div>
+    <div id="bodyList"></div>
+    <div class="fb-bar">
+      <div class="fb-controls">
+        <span class="fb-count" id="fbBodyChip">0 ကွက်</span>
+        <button class="btn-red" onclick="goConfirmBody()">ထိုးမည်</button>
+      </div>
+    </div>
+    <div class="muted" style="text-align:center;margin-top:8px">ကြေး အမှန် — API က ယူထားတာ (Nov 21 ပွဲတွေ)</div>
+  </div>
+
+  <!-- ဘော်ဒီ ထိုးကွက် အတည်ပြု (တစ်ပွဲချင်း ငွေ — Pho Nov 11 19:28) -->
+  <div class="screen" id="scr-body-confirm">
+    <div class="card">
+      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-body')">←</button><h3>ဘော်ဒီ</h3></div>
+      <table class="confirm-table">
+        <thead><tr><th>No</th><th>Party</th><th><select id="stepBodySel" onchange="setStepBody(this.value)"><option value="500" selected>500</option><option value="1000">1000</option><option value="5000">5000</option><option value="10000">10000</option></select></th></tr></thead>
+        <tbody id="confirmBodyBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px"><span>Total:</span><b id="confirmBodyTotal">0</b></div>
+    </div>
+    <div class="confirm-bar">
+      <button class="cb-trash" onclick="clearAmtBody()">🗑</button>
+      <button class="cb-ok" onclick="confirmBetBody()">✓</button>
+    </div>
+  </div>
+
+  <!-- ပွဲရလဒ် -->
+  <div class="screen" id="scr-results">
+    <div class="card" style="margin-bottom:10px"><div class="row"><h3 id="resultsTitle">မနေ့က ပွဲရလဒ် — 07.11.2026</h3><button class="btn-red" style="width:auto;padding:6px 12px" onclick="go('scr-body')">← ဘော်ဒီ</button></div></div>
+    <div id="resultsList"></div>
+    <div class="muted" style="text-align:center;margin-top:8px">ရလဒ် အမှန် — API က ယူထားတာ (Nov 7 ပွဲတွေ)</div>
+  </div>
+
+  <!-- 2D ထိုးမယ် -->
+  <div class="screen" id="scr-2d">
+    <div class="card">
+      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>2D</h3><span class="rate-badge">90ဆ</span><span class="badge open" id="badge2d">ဖွင့်နေတယ်</span></div>
+      <div class="grid2d" id="grid2d"></div>
+      <!-- TEMP (Pho 23:10, test only): bet3 + pad hidden, restore by removing temp-hide -->
+      <div class="bet3 temp-hide">
+        <button class="bet-box on" id="boxNum2" onclick="setActive2d('num')"><span class="blbl">ဂဏန်း</span><span class="bval" id="valNum2"></span></button>
+        <button class="bet-box" id="boxAmt2" onclick="setActive2d('amt')"><span class="blbl">ငွေ</span><span class="bval" id="valAmt2">5,000</span></button>
+        <button class="bet-box" id="boxRev2" onclick="setActiveRev2d()"><span class="blbl">အပြန်</span><span class="bval" id="valRev2">—</span></button>
+        <button class="plus-btn" onclick="addTyped2d()">＋</button>
+        <button class="rbtn" id="boxRBtn2" onclick="toggleR2d()">R</button>
+      </div>
+      <div class="pad temp-hide" id="pad2d"></div>
+      <div class="row" style="margin-top:10px"><span class="muted">ဒီပွဲ ထိုးပြီး</span><b id="tot2d">0 ကျပ်</b></div>
+      <div class="vlist" id="vouch2d"></div>
+    </div>
+    <div class="betbar">
+      <button class="bb-trash" onclick="clearSel2d()">🗑</button>
+      <span class="bb-count" id="selCount2d">ရွေးချယ်ပြီး:(0)</span>
+      <button class="bb-next" onclick="goConfirm2d()">Next</button>
+    </div>
+  </div>
+
+  <!-- 2D ထိုးကွက် အတည်ပြု (Maung ပုံစံ) -->
+  <div class="screen" id="scr-2d-confirm">
+    <div class="card">
+      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-2d')">←</button><h3>2D</h3></div>
+      <table class="confirm-table">
+        <thead><tr><th>No</th><th>Party</th><th><select id="step2dSel" onchange="setStep2d(this.value)"><option value="100">100</option><option value="500">500</option><option value="1000">1000</option><option value="5000">5000</option><option value="10000">10000</option></select></th></tr></thead>
+        <tbody id="confirm2dBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px"><span>Total:</span><b id="confirm2dTotal">0</b></div>
+    </div>
+    <div class="confirm-bar">
+      <button class="cb-trash" onclick="clearAmt2d()">🗑</button>
+      <button class="cb-ok" onclick="confirmBet2d()">✓</button>
+    </div>
+  </div>
+
+  <!-- 3D ထိုးမယ် (Maung ပုံစံ, v3.55) -->
+  <div class="screen" id="scr-3d">
+    <div class="card">
+      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>3D</h3><span class="rate-badge">650ဆ</span><span class="badge open" id="badge3d">ဖွင့်နေတယ်</span></div>
+      <div class="muted" id="sess3dLine" style="margin:2px 0 8px">16.11.2026</div>
+      <div class="digit3d">
+        <select id="dig3d0" onchange="setDigit3d(0,this.value)"></select>
+        <select id="dig3d1" onchange="setDigit3d(1,this.value)"></select>
+        <select id="dig3d2" onchange="setDigit3d(2,this.value)"></select>
+        <button class="rbtn3d" id="rBtn3d" onclick="toggleR3d()">(R)+(3လုံးပူး)</button>
+      </div>
+      <div class="grid3d" id="grid3d"></div>
+      <div class="row" style="margin-top:10px"><span class="muted">ဒီပွဲစဉ် ထိုးပြီး</span><b id="tot3d">0 ကျပ်</b></div>
+      <div class="vlist" id="vouch3d"></div>
+    </div>
+    <div class="betbar">
+      <button class="bb-trash" onclick="clearSel3d()">🗑</button>
+      <span class="bb-count" id="selCount3d">ရွေးချယ်ပြီး:(0)</span>
+      <button class="bb-next" onclick="goConfirm3d()">Next</button>
+    </div>
+  </div>
+
+  <!-- 3D ထိုးကွက် အတည်ပြု (Maung ပုံစံ) -->
+  <div class="screen" id="scr-3d-confirm">
+    <div class="card">
+      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-3d')">←</button><h3>3D</h3></div>
+      <table class="confirm-table">
+        <thead><tr><th>No</th><th>Party</th><th><select id="step3dSel" onchange="setStep3d(this.value)"><option value="100">100</option><option value="500">500</option><option value="1000">1000</option><option value="5000">5000</option><option value="10000">10000</option></select></th></tr></thead>
+        <tbody id="confirm3dBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px"><span>Total:</span><b id="confirm3dTotal">0</b></div>
+    </div>
+    <div class="confirm-bar">
+      <button class="cb-trash" onclick="clearAmt3d()">🗑</button>
+      <button class="cb-ok" onclick="confirmBet3d()">✓</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scr-vouch">
+    <div class="card" style="margin-bottom:8px"><div class="row"><h3>ဘောက်ချာ</h3><button class="btn-red" style="width:auto;padding:6px 12px" onclick="go('scr-home')">← ပင်မ</button></div></div>
+    <div class="card" style="margin-bottom:8px"><div style="display:flex;gap:8px">
+      <button class="vtab on" data-vt="2d" onclick="setVouchTab('2d')">2D</button>
+      <button class="vtab" data-vt="3d" onclick="setVouchTab('3d')">3D</button>
+      <button class="vtab" data-vt="1d" onclick="setVouchTab('1d')">1D</button>
+    </div></div>
+    <div class="card">
+      <div id="liveVouchWrap"></div>
+      <div id="vouchSample2d">
+      <div class="vouch">
+        <div class="vhead"><span>10.11.2026 မနက်ပိုင်း</span><span class="badge win">နိုင်တယ်</span></div>
+        <div class="vrow"><span>45</span><span>5,000 ကျပ်</span></div>
+        <div class="vrow"><span>78</span><span>5,000 ကျပ်</span></div>
+        <div class="vtot"><span>Total</span><span>10,000 ကျပ်</span></div>
+        <div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">40,000 ကျပ်</b></div>
+      </div>
+      </div>
+      <div id="vouchSample3d" style="display:none">
+      <div class="vouch">
+        <div class="vhead"><span>3D 01.11.2026</span><span class="badge lose">မနိုင်ဘူး</span></div>
+        <div class="vrow"><span>357</span><span>5,000 ကျပ်</span></div>
+        <div class="vtot"><span>Total</span><span>5,000 ကျပ်</span></div>
+      </div>
+      </div>
+      <div id="vouchSample1d" style="display:none">
+      <div class="vouch">
+        <div class="vhead"><span>07.11.2026 ဘော်ဒီ</span><span class="badge win">နိုင်တယ်</span></div>
+        <div class="vrow"><span>ရိုးမား VS ဆာဆူအိုလို · ရိုးမား <span class="ro">1-5</span></span><span>1,000 ကျပ်</span></div>
+        <div class="vtot"><span>Total</span><span>1,000 ကျပ်</span></div>
+        <div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">1,000 ကျပ်</b></div>
+      </div>
+      </div>
+      <div id="vouchEmpty" style="display:none;text-align:center;padding:36px 20px;color:#64748b;font-size:15px">ဘောက်ချာ မရှိပါ။</div>
+    </div>
+  </div>
+
+  <!-- log -->
+  <div class="screen" id="scr-log">
+    <div class="card"><button class="menu-row" onclick="go('scr-vouch')"><span>ဘောက်ချာ</span><span>›</span></button></div>
+    <div class="sect">ငွေစာရင်း</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="display:flex;border-bottom:1px solid #e2e8f0">
+        <button class="ltab on" data-lt="ball" onclick="setLogTab('ball')">Ball</button>
+        <button class="ltab" data-lt="2d" onclick="setLogTab('2d')">2D</button>
+        <button class="ltab" data-lt="3d" onclick="setLogTab('3d')">3D</button>
+        <button class="ltab" data-lt="money" onclick="setLogTab('money')">ငွေစာရင်း</button>
+      </div>
+      <div id="logBall"></div>
+      <div id="log2d" style="display:none">
+        <div class="hist-row"><span>10.11.2026 — 2D အနိုင်</span><b style="color:#166534">+40,000</b></div>
+        <div class="hist-row"><span>10.11.2026 — 2D ထိုး</span><b style="color:#991b1b">-10,000</b></div>
+      </div>
+      <div id="log3d" style="display:none">
+        <div class="hist-row"><span class="muted">3D ငွေစာရင်း မရှိသေးပါ</span></div>
+      </div>
+      <div id="logMoney" style="display:none">
+        <div class="hist-row"><span>10.11.2026 — ငွေသွင်း (KBPay)</span><b style="color:#166534">+100,000</b></div>
+        <div class="hist-row"><span>09.11.2026 — ငွေထုတ်</span><b style="color:#991b1b">-50,000</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- noti -->
+  <div class="screen" id="scr-noti">
+    <div class="sect">အသိပေးချက်</div>
+    <div class="card">
+      <div class="hist-row"><span>ငွေသွင်း 100,000 ကျပ် အတည်ပြုပြီးပြီ</span><span class="muted">10.11.2026</span></div>
+      <div class="hist-row"><span>2D မနက်ပိုင်း ထွက်ဂဏန်း — 45</span><span class="muted">10.11.2026</span></div>
+      <div class="hist-row"><span>3D 16.11.2026 ပွဲစဉ် ဖွင့်နေတယ်</span><span class="muted">10.11.2026</span></div>
+      <div class="hist-row"><span>2D မနက်ပိုင်း 11:55 ပိတ်မယ်</span><span class="muted">10.11.2026</span></div>
+    </div>
+  </div>
+
+  <!-- money -->
+  <div class="screen" id="scr-money">
+    <div class="card" style="text-align:center">
+      <div class="muted">ပင်မလက်ကျန်ငွေ</div>
+      <div style="font-size:36px;font-weight:bold;color:#0e7490"><span id="walletBig">50,000</span> <span style="font-size:16px">ကျပ်</span></div>
+    </div>
+    <div class="card">
+      <h3>ငွေသွင်းမယ်</h3>
+      <div class="pay-opt" id="payIn">
+        <button class="on" onclick="setPay('payIn',this)">KBPay</button>
+        <button onclick="setPay('payIn',this)">WavePay</button>
+      </div>
+      <div class="amt-step">
+        <button class="step-btn" onclick="adjAmt('topupAmt',-500)">−</button>
+        <input type="number" id="topupAmt" placeholder="ငွေပမာဏ (ကျပ်)">
+        <button class="step-btn" onclick="adjAmt('topupAmt',500)">+</button>
+      </div>
+      <div class="amt-chips">
+        <button onclick="setAmt('topupAmt',500)">500</button>
+        <button onclick="setAmt('topupAmt',1500)">1500</button>
+        <button onclick="setAmt('topupAmt',2000)">2000</button>
+        <button onclick="setAmt('topupAmt',2500)">2500</button>
+        <button onclick="setAmt('topupAmt',3000)">3000</button>
+      </div>
+      <div class="note">လွှဲရမယ့် အကောင့်: KBPay — 09xxxxxxxxx (ဆရာ့ အကောင့်)<br>လွှဲပြီးရင် screenshot တင်ပြီး ပို့မယ် — admin အတည်ပြုရင် ပိုက်ဆံအိတ်ထဲ ရောက်မယ်။</div>
+      <button class="btn-ghost" style="width:100%;margin-bottom:10px" onclick="document.getElementById('topupShot').click()">+ လွှဲပြီးကြောင်း screenshot တင်မယ်</button>
+      <input type="file" id="topupShot" accept="image/*" style="display:none" onchange="document.getElementById('topupShotName').textContent=this.files[0]?('ရွေးပြီး: '+this.files[0].name):''">
+      <div id="topupShotName" class="muted" style="margin-bottom:10px"></div>
+      <button class="btn-green" onclick="requestTopup()">ငွေသွင်း တောင်းမယ်</button>
+      <div id="topupMsg" class="muted" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>ငွေထုတ်မယ်</h3>
+      <div class="pay-opt" id="payOut">
+        <button class="on" onclick="setPay('payOut',this); wdBank='KBPay'">KBPay</button>
+        <button onclick="setPay('payOut',this); wdBank='WavePay'">WavePay</button>
+      </div>
+      <input type="tel" id="wdPhone" placeholder="ဖုန်းနံပါတ်">
+      <input type="text" id="wdName" placeholder="အမည်">
+      <input type="text" id="wdAcc" placeholder="လက်ခံမယ့် KBPay / WavePay နံပါတ်">
+      <div class="amt-step">
+        <button class="step-btn" onclick="adjAmt('wdAmt',-500)">−</button>
+        <input type="number" id="wdAmt" placeholder="ထုတ်မယ့် ငွေပမာဏ (ကျပ်)">
+        <button class="step-btn" onclick="adjAmt('wdAmt',500)">+</button>
+      </div>
+      <div class="amt-chips">
+        <button onclick="setAmt('wdAmt',500)">500</button>
+        <button onclick="setAmt('wdAmt',1500)">1500</button>
+        <button onclick="setAmt('wdAmt',2000)">2000</button>
+        <button onclick="setAmt('wdAmt',2500)">2500</button>
+        <button onclick="setAmt('wdAmt',3000)">3000</button>
+      </div>
+      <button class="btn-red" onclick="requestWithdraw()">ငွေထုတ် တောင်းမယ်</button>
+      <div id="wdMsg" class="muted" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- password change -->
+  <div class="screen" id="scr-pw">
+    <div class="card" style="margin-bottom:10px"><div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-user')">←</button><h3>စကားဝှက် ပြောင်းမည်</h3></div></div>
+    <div class="card">
+      <input type="password" id="pwOld" placeholder="လက်ရှိ စကားဝှက်">
+      <input type="password" id="pwNew" placeholder="စကားဝှက် အသစ်">
+      <input type="password" id="pwNew2" placeholder="စကားဝှက် အသစ် အတည်ပြုပါ">
+      <button class="btn-green" onclick="changePw()">စကားဝှက် ပြောင်းမည်</button>
+      <div id="pwMsg" class="muted" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- terms -->
+  <div class="screen" id="scr-terms">
+    <div class="card" style="margin-bottom:10px"><div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-user')">←</button><h3>စည်းကမ်း သတ်မှတ်ချက်များ</h3></div></div>
+    <div class="card">
+      <ol class="terms-list">
+        <li>2D — ၁၀၀ ကျပ် ထိုးရင် ၉,၀၀၀ ကျပ် (၉၀ဆ) ရမယ်။</li>
+        <li>3D — ၁၀၀ ကျပ် ထိုးရင် ၆၅,၀၀၀ ကျပ် (၆၅၀ဆ) ရမယ်။</li>
+        <li>ဘောပွဲ — အနည်းဆုံး ၅၀၀ ကျပ် လောင်းရမယ်။</li>
+        <li>ငွေသွင်း — KBPay / WavePay လွှဲပြီး screenshot တင်ပါ။ Admin အတည်ပြုရင် ပိုက်ဆံအိတ်ထဲ ရောက်မယ်။</li>
+        <li>ငွေထုတ် — တောင်းဆိုပြီးရင် Admin အတည်ပြုရင် လွှဲပေးမယ်။</li>
+        <li>ပွဲ အဖွင့် / အပိတ် — Admin သတ်မှတ်တဲ့အတိုင်း ဖြစ်မယ်။</li>
+        <li>ထိုးငွေ — ထိုးတာနဲ့ ပိုက်ဆံအိတ်က နှုတ်မယ်။ အနိုင်ရငွေ — ပိုက်ဆံအိတ်ထဲ ပေါင်းမယ်။</li>
+        <li>မောင်း အကောက် — ၂–၃ ပွဲ 15%, ၄–၇ ပွဲ 20%, ၈–၁၀ ပွဲ 30%။ မောင်း အများဆုံး ၁၀ သင်း ပဲ ထိုးလို့ရတယ်။</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- user -->
+  <div class="screen" id="scr-user">
+    <div class="card" style="text-align:center">
+      <div class="avatar" style="margin:0 auto;width:88px;height:88px;font-size:36px;background:#0284c7;color:#fff">U</div>
+      <div class="ribbon">User001</div>
+      <div style="font-size:15px;font-weight:bold;margin:14px 0 4px">ပရိုဖိုင် အသေးစိတ်</div>
+      <div style="width:120px;height:2px;background:#94a3b8;margin:0 auto 8px"></div>
+      <div class="prow"><span>အသုံးပြုသူကုဒ်</span><span>:</span><b>10001</b></div>
+      <div class="prow"><span>အမည်</span><span>:</span><b>User001</b></div>
+      <div class="prow"><span>ပင်မလက်ကျန်ငွေ</span><span>:</span><b id="walletProf">50,000 ကျပ်</b></div>
+      <button class="btn-red" style="margin-top:12px" onclick="showLogin()">ထွက်မည်</button>
+    </div>
+    <div class="sect">ရွေးချယ်စရာများ</div>
+    <button class="menu-row" onclick="go('scr-log')"><span>ငွေစာရင်း မှတ်တမ်း</span><span>›</span></button>
+    <button class="menu-row" onclick="go('scr-pw')"><span>စကားဝှက် ပြောင်းမည်</span><span>›</span></button>
+    <button class="menu-row" onclick="toast('နမူနာပါ')"><span>အကြောင်းစာ</span><span>›</span></button>
+    <button class="menu-row" onclick="go('scr-terms')"><span>စည်းကမ်း သတ်မှတ်ချက်များ</span><span>›</span></button>
+    <button class="menu-row" onclick="toast('နမူနာပါ')"><span>ဘာသာစကား</span><span>›</span></button>
+    <button class="menu-row" onclick="toast('နမူနာပါ')"><span>Cache Clear</span><span>›</span></button>
+    <button class="menu-row" onclick="go('scr-money')"><span>ငွေသွင်း / ငွေထုတ်</span><span>›</span></button>
+  </div>
+
+  <nav>
+    <button class="on" data-scr="scr-home" onclick="go('scr-home')"><span class="ic"></span>ပင်မ</button>
+    <button data-scr="scr-log" onclick="go('scr-log')"><span class="ic"></span>စာရင်း</button>
+    <button data-scr="scr-noti" onclick="go('scr-noti')"><span class="ic"></span>အသိပေးချက်</button>
+    <button data-scr="scr-user" onclick="go('scr-user')"><span class="ic"></span>ကျွန်ုပ်</button>
+  </nav>
+  <div class="toast" id="toast"></div>
+</div>
+<script src="pb.js"></script>
+<script>
+  var placed = { '2d': [], '3d': [], 'fb': [] };
+  var vouchTab = '2d'; // ဘောက်ချာ tab: 2d | 3d | 1d (1D = ဘောပွဲ; မရောပါနဲ့ — Pho Nov 11 13:26-13:27)
+  var balance = 50000;
+  var fbSel = { maung: {}, body: {} };
+  var fmt = function(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+  var MATCHES = [
+    { league: 'England Premier League', date: '21-11-26', time: '7:00 PM', home: 'Man City', away: 'Fulham', hcpSide: 'h', hcp: '1-25', goalLine: '3.25', over: '3+25' },
+    { league: 'Spain La Liga', date: '21-11-26', time: '7:30 PM', home: 'CD Alaves', away: 'Deportivo A Coruna', hcpSide: 'h', hcp: '=-25', goalLine: '2.25', over: '2+25' },
+    { league: 'Italy Serie A', date: '21-11-26', time: '8:30 PM', home: 'Como', away: 'Cagliari', hcpSide: 'h', hcp: '1-5', goalLine: '3', over: '3=' },
+    { league: 'Italy Serie A', date: '21-11-26', time: '8:30 PM', home: 'Lazio', away: 'Lecce', hcpSide: 'h', hcp: '1-5', goalLine: '3', over: '3=' },
+    { league: 'Germany Bundesliga I', date: '21-11-26', time: '9:00 PM', home: 'Elversberg', away: 'SC Freiburg', hcpSide: 'a', hcp: '=+5', goalLine: '3', over: '3=' },
+    { league: 'Germany Bundesliga I', date: '21-11-26', time: '9:00 PM', home: 'Eintracht Frankfurt', away: 'TSG Hoffenheim', hcpSide: 'h', hcp: '=', goalLine: '3.5', over: '3+5' },
+    { league: 'Germany Bundesliga I', date: '21-11-26', time: '9:00 PM', home: 'Bayer Leverkusen', away: 'Paderborn', hcpSide: 'h', hcp: '1-75', goalLine: '3.5', over: '3+5' },
+    { league: 'Germany Bundesliga I', date: '21-11-26', time: '9:00 PM', home: 'Borussia M\'gladbach', away: 'Borussia Dortmund', hcpSide: 'a', hcp: '1=', goalLine: '3.25', over: '3+25' },
+    { league: 'Germany Bundesliga I', date: '21-11-26', time: '9:00 PM', home: 'Union Berlin', away: 'RB Leipzig', hcpSide: 'a', hcp: '1=', goalLine: '3.25', over: '3+25' }
+  ];
+  var ABBR = { 'Man City':'MCI', 'Fulham':'FUL', 'CD Alaves':'ALA', 'Deportivo A Coruna':'DEP', 'Como':'COM', 'Cagliari':'CAG', 'Lazio':'LAZ', 'Lecce':'LEC', 'Elversberg':'ELV', 'SC Freiburg':'FRE', 'Eintracht Frankfurt':'FRA', 'TSG Hoffenheim':'HOF', 'Bayer Leverkusen':'LEV', 'Paderborn':'PAD', "Borussia M'gladbach":'MGL', 'Borussia Dortmund':'DOR', 'Union Berlin':'UNB', 'RB Leipzig':'RBL' };
+  function abbr(name){ return ABBR[name] || name; }
+  // အသင်းနမည် မြန်မာလို — မူကြမ်း (Pho Nov 11 14:41: မူကြမ်း အတိုင်း ထည့်၊ ဆရာ စစ်ပြီး ပြင်ပေးမယ်)
+  var TEAM_MM = { 'Arsenal':'အာဆင်နယ်', 'Athletic Club':'အက်သလက်တစ်', 'Augsburg':'အော့ဂ်စ်ဘတ်', 'Auxerre':'အော့ဇေး', 'Bayer Leverkusen':'လီဗာကူဆင်', 'Bayern Munich':'ဘိုင်ယန်', 'Bologna':'ဘိုလော့ဂ်နာ', 'Borussia Dortmund':'ဒေါ့မွန်', "Borussia M'gladbach":'ဂလက်ဘတ်', 'CD Alaves':'အလာဗတ်စ်', 'Cagliari':'ကာလီယာရီ', 'Como':'ကိုမို', 'Deportivo A Coruna':'ဒီပို့တီဗို', 'Eintracht Frankfurt':'ဖရန့်ဖတ်', 'Elversberg':'အဲဗာ့စ်ဘတ်', 'Espanyol':'အက်စ်ပန်ညို', 'Frosinone':'ဖရိုဆီနိုနီ', 'Fulham':'ဖူလ်ဟမ်', 'Hull':'ဟားလ်', 'Lazio':'လာဇီယို', 'Lecce':'လက်ချီ', 'Leeds':'လိဒ်စ်', 'Mainz':'မိန့်ဇ်', 'Malaga':'မာလာဂါ', 'Man City':'မန်စီးတီး', 'Newcastle':'နယူးကာဆယ်', 'Nottm Forest':'နော်တင်ဟမ် ဖောရက်စ်', 'Osasuna':'အိုဆာဆူနာ', 'PSG':'ပီအက်စ်ဂျီ', 'Paderborn':'ပါဒါဘွန်း', 'Paris FC':'ပါရီ အက်ဖ်စီ', 'Parma':'ပါးမား', 'RB Leipzig':'လိုက်ပ်ဇစ်', 'Racing Santander':'ရေစင်း ဆန်တန်ဒါ', 'Real Madrid':'ရီးရဲလ်', 'Roma':'ရိုးမား', 'SC Freiburg':'ဖရိုင်းဘတ်', 'Sassuolo':'ဆာဆူအိုလို', 'TSG Hoffenheim':'ဟော့ဖန်ဟိမ်း', 'Torino':'တိုရီနို', 'Tottenham':'စပါး', 'Troyes':'ထရွိုင်း', 'Union Berlin':'ယူနီယံ ဘာလင်', 'Valencia':'ဗလင်စီယာ', 'VfB Stuttgart':'စတုဂတ်', 'Werder Bremen':'ဝါဒါ ဘရီမင်' };
+  function teamMM(name){ return TEAM_MM[name] || name; }
+  // အသင်းလိုဂို (badge) — TheSportsDB က တစ်ခါတည်း ထုတ်ပြီး အသေထည့်ထားတာ (Pho Nov 11 15:53)
+  var TEAM_BADGE = { 'Arsenal':'https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png', 'Athletic Club':'https://r2.thesportsdb.com/images/media/team/badge/68w7fe1639408210.png', 'Augsburg':'https://r2.thesportsdb.com/images/media/team/badge/xqyyvq1473453233.png', 'Auxerre':'https://r2.thesportsdb.com/images/media/team/badge/lzdtbf1658753355.png', 'Bayer Leverkusen':'https://r2.thesportsdb.com/images/media/team/badge/3x9k851726760113.png', 'Bayern Munich':'https://r2.thesportsdb.com/images/media/team/badge/01ogkh1716960412.png', 'Bologna':'https://r2.thesportsdb.com/images/media/team/badge/2qi1u31655592366.png', 'Borussia Dortmund':'https://r2.thesportsdb.com/images/media/team/badge/tqo8ge1716960353.png', 'Borussia M\'gladbach':'https://r2.thesportsdb.com/images/media/team/badge/sysurw1473453380.png', 'CD Alaves':'https://r2.thesportsdb.com/images/media/team/badge/mfn99h1734673842.png', 'Cagliari':'https://r2.thesportsdb.com/images/media/team/badge/wvsvxt1447534471.png', 'Como':'https://r2.thesportsdb.com/images/media/team/badge/02x81t1627405841.png', 'Deportivo A Coruna':'https://r2.thesportsdb.com/images/media/team/badge/62bvwv1783013156.png', 'Eintracht Frankfurt':'https://r2.thesportsdb.com/images/media/team/badge/rurwpy1473453269.png', 'Elversberg':'https://r2.thesportsdb.com/images/media/team/badge/z079go1677573926.png', 'Espanyol':'https://r2.thesportsdb.com/images/media/team/badge/867nzz1681703222.png', 'Frosinone':'https://r2.thesportsdb.com/images/media/team/badge/a7xa151603170120.png', 'Fulham':'https://r2.thesportsdb.com/images/media/team/badge/xwwvyt1448811086.png', 'Hull':'https://r2.thesportsdb.com/images/media/team/badge/fbqqda1601726113.png', 'Lazio':'https://r2.thesportsdb.com/images/media/team/badge/rwqyvs1448806608.png', 'Lecce':'https://r2.thesportsdb.com/images/media/team/badge/j4vznr1567365249.png', 'Leeds':'https://r2.thesportsdb.com/images/media/team/badge/jcgrml1756649030.png', 'Mainz':'https://r2.thesportsdb.com/images/media/team/badge/fhm9v51552134916.png', 'Malaga':'https://r2.thesportsdb.com/images/media/team/badge/upqyvr1473502952.png', 'Man City':'https://r2.thesportsdb.com/images/media/team/badge/vwpvry1467462651.png', 'Newcastle':'https://r2.thesportsdb.com/images/media/team/badge/kwaz8w1793219401.png', 'Nottm Forest':'https://r2.thesportsdb.com/images/media/team/badge/sar2y41781740886.png', 'Osasuna':'https://r2.thesportsdb.com/images/media/team/badge/rvspvt1473502960.png', 'PSG':'https://r2.thesportsdb.com/images/media/team/badge/rwqrrq1473504808.png', 'Paderborn':'https://r2.thesportsdb.com/images/media/team/badge/kddvva1566048058.png', 'Paris FC':'https://r2.thesportsdb.com/images/media/team/badge/yuvtsy1447594254.png', 'Parma':'https://r2.thesportsdb.com/images/media/team/badge/6yiaxs1627406063.png', 'RB Leipzig':'https://r2.thesportsdb.com/images/media/team/badge/zjgapo1594244951.png', 'Racing Santander':'https://r2.thesportsdb.com/images/media/team/badge/97kkiq1536575158.png', 'Real Madrid':'https://r2.thesportsdb.com/images/media/team/badge/vwvwrw1473502969.png', 'Roma':'https://r2.thesportsdb.com/images/media/team/badge/jwro2s1760820674.png', 'SC Freiburg':'https://r2.thesportsdb.com/images/media/team/badge/urwtup1473453288.png', 'Sassuolo':'https://r2.thesportsdb.com/images/media/team/badge/xystvp1448806138.png', 'TSG Hoffenheim':'https://r2.thesportsdb.com/images/media/team/badge/9hwvb21621593919.png', 'Torino':'https://r2.thesportsdb.com/images/media/team/badge/xxprty1448806802.png', 'Tottenham':'https://r2.thesportsdb.com/images/media/team/badge/dfyfhl1604094109.png', 'Troyes':'https://r2.thesportsdb.com/images/media/team/badge/sl5kzg1766617559.png', 'Union Berlin':'https://r2.thesportsdb.com/images/media/team/badge/q0o5001599679795.png', 'Valencia':'https://r2.thesportsdb.com/images/media/team/badge/dm8l6o1655594864.png', 'VfB Stuttgart':'https://r2.thesportsdb.com/images/media/team/badge/yppyux1473454085.png', 'Werder Bremen':'https://r2.thesportsdb.com/images/media/team/badge/tkvqan1716960454.png' };
+  function teamBadge(name){ var u = TEAM_BADGE[name]; return u ? '<img class="tlogo" src="' + u + '" alt="" onerror="this.style.display=\'none\'">' : ''; }
+  // မနေ့က ပွဲရလဒ် — Nov 7 အမှန် (API, score + Myanmar ကြေး)
+  var RESULTS7 = [
+  { league: 'England Premier League', matches: [
+    { home: 'Leeds', away: 'Tottenham', sh: 1, sa: 0, side: 'h', hcp: '=', over: '2+5' },
+    { home: 'Arsenal', away: 'Hull', sh: 1, sa: 0, side: 'h', hcp: '2-25', over: '3+25' },
+    { home: 'Fulham', away: 'Newcastle', sh: 1, sa: 1, side: 'h', hcp: '=-5', over: '3=' },
+    { home: 'Nottm Forest', away: 'Man City', sh: 3, sa: 1, side: 'a', hcp: '=+75', over: '3=' },
+  ] },
+  { league: 'Spain La Liga', matches: [
+    { home: 'Malaga', away: 'Racing Santander', sh: 1, sa: 2, side: 'h', hcp: '=-25', over: '2+75' },
+    { home: 'Espanyol', away: 'Deportivo A Coruna', sh: 0, sa: 0, side: 'h', hcp: '=-25', over: '2+5' },
+    { home: 'Osasuna', away: 'Athletic Club', sh: 1, sa: 1, side: 'a', hcp: '=+5', over: '2+25' },
+    { home: 'Valencia', away: 'Real Madrid', sh: 0, sa: 3, side: 'a', hcp: '1+75', over: '3+25' },
+  ] },
+  { league: 'Italy Serie A', matches: [
+    { home: 'Cagliari', away: 'Frosinone', sh: 1, sa: 0, side: 'a', hcp: '=+25', over: '3+25' },
+    { home: 'Torino', away: 'Lecce', sh: 1, sa: 1, side: 'h', hcp: '=-75', over: '2+75' },
+    { home: 'Parma', away: 'Bologna', sh: 1, sa: 2, side: 'a', hcp: '=+75', over: '2+25' },
+    { home: 'Roma', away: 'Sassuolo', sh: 3, sa: 0, side: 'h', hcp: '1-5', over: '3+5' },
+  ] },
+  { league: 'Germany Bundesliga I', matches: [
+    { home: 'Borussia Dortmund', away: 'Elversberg', sh: 2, sa: 1, side: 'h', hcp: '1-5', over: '3+5' },
+    { home: 'Mainz', away: 'Bayern Munich', sh: 1, sa: 2, side: 'a', hcp: '1+75', over: '4=' },
+    { home: 'Paderborn', away: 'Eintracht Frankfurt', sh: 2, sa: 2, side: 'a', hcp: '=+25', over: '3=' },
+    { home: 'RB Leipzig', away: 'Augsburg', sh: 5, sa: 2, side: 'h', hcp: '1-5', over: '4=' },
+    { home: 'VfB Stuttgart', away: 'Werder Bremen', sh: 1, sa: 0, side: 'h', hcp: '=-5', over: '3+5' },
+  ] },
+  { league: 'France Ligue 1', matches: [
+    { home: 'Auxerre', away: 'Paris FC', sh: 0, sa: 1, side: 'a', hcp: '1=', over: '2+75' },
+    { home: 'PSG', away: 'Troyes', sh: 1, sa: 0, side: 'h', hcp: '2-5', over: '3+75' },
+  ] },
+];
+  // ပွဲစဉ် အဖွင့်အပိတ် = Admin app က သတ်မှတ်တာ (Pho 23:53) — player app က နာရီနဲ့ မဆုံးဖြတ်ဘူး
+  var adminSession2d = { name: 'မနက်ပိုင်း', open: true }; // နမူနာ — Admin က ဖွင့်ထားတယ်
+  function nowSession(){ return adminSession2d; }
+  function applySession(){
+    var s = nowSession();
+    var hb=document.getElementById('homeBtn2d'); if(hb) hb.textContent = s.open ? ('ဒီနေ့ ' + s.name) : 'ဒီနေ့ ပိတ်ပြီ';
+    var b2 = document.getElementById('badge2d');
+    b2.textContent = s.open ? 'ဖွင့်နေတယ်' : 'ပိတ်ပြီ';
+    b2.className = 'badge ' + (s.open ? 'open' : 'closed');
+    var b2 = document.getElementById('bet2d'); if(b2) b2.disabled = !s.open;
+  }
+  // 3D (Maung ပုံစံ, v3.55): oval grid 000-999 + digit dropdowns + (R) + amount -> Next -> confirm table
+  var sel3d = [];
+  var amt3dMap = {};
+  var step3d = 100;
+  var LIMIT3D = null; // ကွက်လပ် — Admin app က ထည့်ရမှာ
+  var betAlready3d = {};
+  var dig3d = ['0', '0', '0'];
+  var rOn3d = false;
+  function isFull3d(n){ return LIMIT3D != null && (betAlready3d[n] || 0) >= LIMIT3D; }
+  function selHas3d(n){ return sel3d.indexOf(n) !== -1; }
+  function perms3d(a, b, c){
+    var set = {};
+    [[a,b,c],[a,c,b],[b,a,c],[b,c,a],[c,a,b],[c,b,a]].forEach(function(p){ set[p.join('')] = true; });
+    return Object.keys(set);
+  }
+  function rNums3d(){
+    // 3-digit apuu (triple) -> show htine 10 (Pho Nov 11 19:10): 000 111 ... 999
+    if(dig3d[0] === dig3d[1] && dig3d[1] === dig3d[2]){
+      return ['000','111','222','333','444','555','666','777','888','999'];
+    }
+    return perms3d(dig3d[0], dig3d[1], dig3d[2]);
+  }
+  function toggleSel3d(n){
+    if(isFull3d(n)){ toast('လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    var i = sel3d.indexOf(n);
+    if(i === -1){ sel3d.push(n); amt3dMap[n] = 0; }
+    else { sel3d.splice(i, 1); delete amt3dMap[n]; }
+    updateSelCount3d();
+    syncGrid3d();
+  }
+  function updateSelCount3d(){
+    var sc = document.getElementById('selCount3d');
+    if(sc) sc.textContent = 'ရွေးချယ်ပြီး:(' + sel3d.length + ')';
+  }
+  function buildGrid3d(){
+    var g = document.getElementById('grid3d');
+    if(!g) return;
+    for(var i = 0; i < 1000; i++){
+      (function(n){
+        var b = document.createElement('button');
+        b.dataset.num = n;
+        b.textContent = n;
+        b.onclick = function(){ toggleSel3d(n); };
+        g.appendChild(b);
+      })(('00' + i).slice(-3));
+    }
+    for(var d = 0; d < 3; d++){
+      var sel = document.getElementById('dig3d' + d);
+      if(sel){
+        for(var v = 0; v <= 9; v++){
+          var o = document.createElement('option');
+          o.value = String(v); o.textContent = String(v);
+          sel.appendChild(o);
+        }
+        sel.value = '0';
+      }
+    }
+    syncGrid3d();
+  }
+  function syncGrid3d(){
+    var g = document.getElementById('grid3d');
+    if(!g) return;
+    var perms = rOn3d ? rNums3d() : null;
+    var kids = g.children;
+    for(var i = 0; i < kids.length; i++){
+      var num = kids[i].dataset.num;
+      kids[i].classList.toggle('on', selHas3d(num));
+      kids[i].classList.toggle('full', isFull3d(num));
+      kids[i].classList.toggle('hide', !!(perms && perms.indexOf(num) === -1));
+    }
+    var rb = document.getElementById('rBtn3d');
+    if(rb) rb.classList.toggle('on', rOn3d);
+  }
+  function setDigit3d(i, v){
+    dig3d[i] = v;
+    if(rOn3d) syncGrid3d();
+  }
+  function toggleR3d(){
+    rOn3d = !rOn3d;
+    syncGrid3d();
+  }
+  function clearSel3d(){
+    sel3d = [];
+    amt3dMap = {};
+    updateSelCount3d();
+    syncGrid3d();
+  }
+  function goConfirm3d(){
+    if(!sel3d.length){ toast('ဂဏန်း အရင် ရွေးပါ'); return; }
+    renderConfirm3d();
+    go('scr-3d-confirm');
+  }
+  function renderConfirm3d(){
+    var body = document.getElementById('confirm3dBody');
+    var out = '';
+    sel3d.forEach(function(n, i){
+      var a = amt3dMap[n] || 0;
+      out += '<tr><td>' + (i + 1) + '</td><td>' + n + '</td><td><button class="step-btn" onclick="adjAmt3d(\'' + n + '\',-1)">−</button><span class="camt" id="camt3d-' + n + '">' + fmt(a) + '</span><button class="step-btn" onclick="adjAmt3d(\'' + n + '\',1)">+</button></td></tr>';
+    });
+    body.innerHTML = out;
+    updateConfirmTotal3d();
+  }
+  function updateConfirmTotal3d(){
+    var t = 0;
+    sel3d.forEach(function(n){ t += amt3dMap[n] || 0; });
+    document.getElementById('confirm3dTotal').textContent = fmt(t);
+  }
+  function setStep3d(v){ step3d = parseInt(v, 10) || 100; }
+  function adjAmt3d(n, dir){
+    var a = (amt3dMap[n] || 0) + dir * step3d;
+    if(a < 0) a = 0;
+    amt3dMap[n] = a;
+    var el = document.getElementById('camt3d-' + n);
+    if(el) el.textContent = fmt(a);
+    updateConfirmTotal3d();
+  }
+  function clearAmt3d(){
+    sel3d.forEach(function(n){ amt3dMap[n] = 0; });
+    renderConfirm3d();
+  }
+  function confirmBet3d(){
+    var total = 0;
+    sel3d.forEach(function(n){ total += amt3dMap[n] || 0; });
+    if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    var over = null;
+    if(LIMIT3D != null){
+      sel3d.forEach(function(n){
+        if(!over && (betAlready3d[n] || 0) + (amt3dMap[n] || 0) > LIMIT3D) over = n;
+      });
+    }
+    if(over){ toast(over + ' လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    var batch3d = [];
+    sel3d.forEach(function(n){
+      var a = amt3dMap[n] || 0;
+      if(a > 0){
+        batch3d.push({ num: n, amt: a });
+        betAlready3d[n] = (betAlready3d[n] || 0) + a;
+      }
+    });
+    if(batch3d.length) placed['3d'].push(batch3d);
+    balance -= total;
+    toast('လုပ်ဆောင်ချက်အောင်မြင်');
+    sel3d = [];
+    amt3dMap = {};
+    rOn3d = false;
+    updateSelCount3d();
+    syncGrid3d();
+    renderTotals();
+    go('scr-3d');
+  }
+  var sel2d = [];
+  var amt2dMap = {}; // ဂဏန်းတစ်လုံးချင်းစီ ငွေပမာဏ (Maung ပုံစံ)
+  var step2d = 100; // confirmation table step (dropdown)
+  var LIMIT2D = null; // ကွက်လပ် — Admin app က ထည့်ရမှာ (တစ်ဂဏန်း အများဆုံး စုစုပေါင်း)
+  var betAlready2d = {}; // ကွက်လပ် — Admin app / server က လာမှာ (အရင် ထိုးပြီးသား စုစုပေါင်း)
+  var inp2d = { num: '', amt: '', revAmt: '', r: false, active: 'num' };
+  function isFull2d(n){ return LIMIT2D != null && (betAlready2d[n] || 0) >= LIMIT2D; }
+  function selHas(n){ return sel2d.indexOf(n) !== -1; }
+  function toggleSel(n){
+    if(isFull2d(n)){ toast('လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    var i = sel2d.indexOf(n);
+    if(i === -1){ sel2d.push(n); amt2dMap[n] = 0; }
+    else { sel2d.splice(i, 1); delete amt2dMap[n]; }
+    updatePreview2d();
+  }
+  function amtTxt2d(n){ var a = betAlready2d[n] || 0; return a ? fmt(a) : '—'; }
+  function buildGrid2d(){
+    var g = document.getElementById('grid2d');
+    for(var i = 0; i < 100; i++){
+      (function(n){
+        var b = document.createElement('button');
+        b.dataset.num = n;
+        if(isFull2d(n)) b.classList.add('full');
+        var sn = document.createElement('span');
+        sn.className = 'gn';
+        sn.textContent = n;
+        b.appendChild(sn);
+        b.onclick = function(){ toggleSel(n); };
+        g.appendChild(b);
+      })(('0' + i).slice(-2));
+    }
+  }
+  function syncGrid2d(){
+    var g = document.getElementById('grid2d');
+    var kids = g.children;
+    for(var i = 0; i < kids.length; i++){
+      var num = kids[i].dataset.num;
+      kids[i].classList.toggle('on', selHas(num));
+      kids[i].classList.toggle('full', isFull2d(num));
+    }
+  }
+  function addTyped2d(){
+    if(inp2d.num.length !== 2){ toast('ဂဏန်း ၂ လုံး ထည့်ပါ'); return; }
+    toggleSel(inp2d.num);
+    inp2d.num = '';
+    updatePreview2d();
+  }
+  function setActive2d(box){
+    inp2d.active = box;
+    document.getElementById('boxNum2').classList.toggle('on', box === 'num');
+    document.getElementById('boxAmt2').classList.toggle('on', box === 'amt');
+    document.getElementById('boxRev2').classList.toggle('on', box === 'rev');
+    updatePreview2d();
+  }
+  function setActiveRev2d(){
+    if(!inp2d.r){ inp2d.r = true; if(!inp2d.revAmt) inp2d.revAmt = inp2d.amt; }
+    setActive2d('rev');
+  }
+  function toggleR2d(){
+    inp2d.r = !inp2d.r;
+    if(inp2d.r){ if(!inp2d.revAmt) inp2d.revAmt = inp2d.amt; setActive2d('rev'); }
+    else { inp2d.revAmt = ''; setActive2d('num'); }
+    updatePreview2d();
+  }
+  function setAmt2d(el, v){
+    // ငွေ ပေါင်းတယ် (Pho 00:06): 100 နှစ်ခါ = 200; 100 + 500 = 600
+    if(inp2d.active === 'rev'){ inp2d.revAmt = String((parseInt(inp2d.revAmt, 10) || 0) + v); }
+    else { inp2d.amt = String((parseInt(inp2d.amt, 10) || 0) + v); inp2d.active = 'amt'; }
+    setActive2d(inp2d.active);
+  }
+  function cancelBet2d(){
+    sel2d = [];
+    inp2d.num = ''; inp2d.amt = ''; inp2d.revAmt = ''; inp2d.r = false; inp2d.active = 'num';
+    setActive2d('num');
+  }
+  function clearSel2d(){
+    sel2d = [];
+    amt2dMap = {};
+    inp2d.num = ''; inp2d.amt = ''; inp2d.revAmt = ''; inp2d.r = false; inp2d.active = 'num';
+    updatePreview2d();
+  }
+  function goConfirm2d(){
+    if(!sel2d.length){ toast('ဂဏန်း အရင် ရွေးပါ'); return; }
+    renderConfirm2d();
+    go('scr-2d-confirm');
+  }
+  function renderConfirm2d(){
+    var body = document.getElementById('confirm2dBody');
+    var out = '';
+    sel2d.forEach(function(n, i){
+      var a = amt2dMap[n] || 0;
+      out += '<tr><td>' + (i + 1) + '</td><td>' + n + '</td><td><button class="step-btn" onclick="adjAmt2d(\'' + n + '\',-1)">−</button><span class="camt" id="camt-' + n + '">' + fmt(a) + '</span><button class="step-btn" onclick="adjAmt2d(\'' + n + '\',1)">+</button></td></tr>';
+    });
+    body.innerHTML = out;
+    updateConfirmTotal2d();
+  }
+  function updateConfirmTotal2d(){
+    var t = 0;
+    sel2d.forEach(function(n){ t += amt2dMap[n] || 0; });
+    document.getElementById('confirm2dTotal').textContent = fmt(t);
+  }
+  function setStep2d(v){ step2d = parseInt(v, 10) || 100; }
+  function adjAmt2d(n, dir){
+    var a = (amt2dMap[n] || 0) + dir * step2d;
+    if(a < 0) a = 0;
+    amt2dMap[n] = a;
+    var el = document.getElementById('camt-' + n);
+    if(el) el.textContent = fmt(a);
+    updateConfirmTotal2d();
+  }
+  function clearAmt2d(){
+    sel2d.forEach(function(n){ amt2dMap[n] = 0; });
+    renderConfirm2d();
+  }
+  function confirmBet2d(){
+    if(!nowSession().open){ toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    var total = 0;
+    sel2d.forEach(function(n){ total += amt2dMap[n] || 0; });
+    if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    var over = null;
+    if(LIMIT2D != null){
+      sel2d.forEach(function(n){
+        if(!over && (betAlready2d[n] || 0) + (amt2dMap[n] || 0) > LIMIT2D) over = n;
+      });
+    }
+    if(over){ toast(over + ' လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    var batch2d = [];
+    sel2d.forEach(function(n){
+      var a = amt2dMap[n] || 0;
+      if(a > 0){
+        batch2d.push({ num: n, amt: a });
+        betAlready2d[n] = (betAlready2d[n] || 0) + a;
+      }
+    });
+    if(batch2d.length) placed['2d'].push(batch2d);
+    balance -= total;
+    toast('လုပ်ဆောင်ချက်အောင်မြင်');
+    sel2d = [];
+    amt2dMap = {};
+    inp2d.num = ''; inp2d.amt = ''; inp2d.revAmt = ''; inp2d.r = false; inp2d.active = 'num';
+    updatePreview2d();
+    renderTotals();
+    go('scr-2d');
+  }
+  function buildPad2d(){
+    var pad = document.getElementById('pad2d');
+    [1,2,3,4,5,6,7,8,9,'C',0,'x'].forEach(function(d){
+      var b = document.createElement('button');
+      b.textContent = d === 'x' ? '⌫' : d;
+      b.onclick = function(){
+        var fld = inp2d.active === 'rev' ? 'revAmt' : (inp2d.active === 'amt' ? 'amt' : 'num');
+        if(d === 'C'){ inp2d[fld] = ''; }
+        else if(d === 'x'){ inp2d[fld] = inp2d[fld].slice(0,-1); }
+        else {
+          var max = (fld === 'num') ? 5 : 6;
+          if(inp2d[fld].length < max) inp2d[fld] += d;
+        }
+        updatePreview2d();
+      };
+      pad.appendChild(b);
+    });
+  }
+  function updatePreview2d(){
+    var per = parseInt(inp2d.amt, 10) || 0;
+    var revPer = parseInt(inp2d.revAmt, 10) || 0;
+    var sc = document.getElementById('selCount2d');
+    if(sc) sc.textContent = 'ရွေးချယ်ပြီး:(' + sel2d.length + ')';
+    document.getElementById('valNum2').textContent = inp2d.num;
+    document.getElementById('valAmt2').textContent = inp2d.amt ? fmt(parseInt(inp2d.amt, 10)) : '0';
+    document.getElementById('valRev2').textContent = inp2d.r ? fmt(revPer) : '—';
+    document.getElementById('boxRev2').classList.toggle('rev-on', inp2d.r);
+    document.getElementById('boxRev2').classList.toggle('dim', !inp2d.r);
+    document.getElementById('boxRBtn2').classList.toggle('on', inp2d.r);
+    syncGrid2d();
+  }
+  function placeBet2d(){
+    if(!nowSession().open){ toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if(!sel2d.length){ toast('ဂဏန်း နှိပ်ပါ'); return; }
+    var per = parseInt(inp2d.amt, 10) || 0;
+    if(!per){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    var revPer = parseInt(inp2d.revAmt, 10) || 0;
+    var nonPair = sel2d.filter(function(n){ return n[0] !== n[1]; });
+    if(inp2d.r && nonPair.length && !revPer){ toast('အပြန် ငွေ ထည့်ပါ'); return; }
+    var total = sel2d.length * per + (inp2d.r ? nonPair.length * revPer : 0);
+    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    var over = null;
+    if(LIMIT2D != null){
+      sel2d.forEach(function(n){
+        if(!over && (betAlready2d[n] || 0) + per > LIMIT2D) over = n;
+        if(!over && inp2d.r && n[0] !== n[1] && (betAlready2d[n[1] + n[0]] || 0) + revPer > LIMIT2D) over = n[1] + n[0];
+      });
+    }
+    if(over){ toast(over + ' လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    var batchOld = [];
+    sel2d.forEach(function(n){
+      batchOld.push({ num: n, amt: per });
+      betAlready2d[n] = (betAlready2d[n] || 0) + per;
+      if(inp2d.r && n[0] !== n[1]){
+        batchOld.push({ num: n[1] + n[0], amt: revPer });
+        betAlready2d[n[1] + n[0]] = (betAlready2d[n[1] + n[0]] || 0) + revPer;
+      }
+    });
+    if(batchOld.length) placed['2d'].push(batchOld);
+    balance -= total;
+    toast('ထိုးပြီးပြီ — ' + fmt(total) + ' ကျပ် (နမူနာပါ)');
+    sel2d = [];
+    inp2d.num = ''; inp2d.amt = ''; inp2d.revAmt = ''; inp2d.r = false; inp2d.active = 'num';
+    setActive2d('num');
+    renderTotals();
+  }
+  buildPad2d();
+  buildGrid2d();
+  buildGrid3d();
+  function leagueFlag(name){
+    if (name.indexOf('England') === 0) return '\uD83C\uDDEC\uD83C\uDDE7';
+    if (name.indexOf('Spain') === 0) return '\uD83C\uDDEA\uD83C\uDDF8';
+    if (name.indexOf('Italy') === 0) return '\uD83C\uDDEE\uD83C\uDDF9';
+    if (name.indexOf('Germany') === 0) return '\uD83C\uDDE9\uD83C\uDDEA';
+    if (name.indexOf('France') === 0) return '\uD83C\uDDEB\uD83C\uDDF7';
+    return '';
+  }
+  // ဘောပွဲ ပိတ်ချိန် (Pho Nov 12 22:59): ပွဲမစခင် 5 မိနစ်အလို အလိုအလျောက် ပိတ် — Admin က တစ်ပွဲစီ ပိတ်လို့ မရဘူး
+  function matchCloseTime(m){
+    // m.date '21-11-26', m.time '7:00 PM' (local) -> kickoff minus 5 min
+    var dp = m.date.split('-');
+    var tp = m.time.match(/(\d+):(\d+)\s*(AM|PM)/);
+    var h = +tp[1]; if (tp[3] === 'PM' && h !== 12) h += 12; if (tp[3] === 'AM' && h === 12) h = 0;
+    return new Date(2000 + +dp[2], +dp[1] - 1, +dp[0], h, +tp[2] - 5, 0, 0);
+  }
+  function isMatchClosed(m, now){
+    return (now || new Date()) >= matchCloseTime(m);
+  }
+  function closeLabel(m){
+    var d = matchCloseTime(m);
+    var h = d.getHours(), mm = d.getMinutes();
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ':' + ('0' + mm).slice(-2) + ' ' + ap;
+  }
+  function renderMatches(listId, mode){
+    var box = document.getElementById(listId);
+    var html = '';
+    var prevLeague = '';
+    MATCHES.forEach(function(m, i){
+      if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
+      var closed = isMatchClosed(m);
+      html += '<div class="match' + (closed ? ' closed' : '') + '"><div class="mhead"><span>★ ' + m.date + '</span><span>' + m.time + ' · ပိတ် ' + closeLabel(m) + (closed ? ' · ပိတ်ပြီ' : '') + '</span></div><div class="mbody">';
+      html += '<div class="mteams"><div class="mteam" data-team="' + mode + ':' + i + ':hcp-h" onclick="tapTeamRow(this)">' + teamBadge(m.home) + teamMM(m.home) + '</div><div class="mteam" data-team="' + mode + ':' + i + ':hcp-a" onclick="tapTeamRow(this)">' + teamBadge(m.away) + teamMM(m.away) + '</div></div>';
+      html += '<div class="mhcp">';
+      html += '<div class="cell">' + (m.hcpSide === 'h' ? '<button class="odd" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
+      html += '<div class="cell">' + (m.hcpSide === 'a' ? '<button class="odd" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
+      html += '</div>';
+      html += '<div class="mgoal">';
+      html += '<button class="gcell" data-k="' + mode + ':' + i + ':over" onclick="toggleOdd(this)">ဂိုးပေါ်<b>' + m.over + '</b></button>';
+      html += '<button class="gcell" data-k="' + mode + ':' + i + ':under" onclick="toggleOdd(this)">ဂိုးအောက်</button>';
+      html += '</div></div></div>';
+    });
+    box.innerHTML = html;
+  }
+  renderMatches('maungList', 'maung');
+  renderMatches('bodyList', 'body');
+  function renderResults(){
+    var box = document.getElementById('resultsList');
+    var html = '';
+    var n = 0;
+    RESULTS7.forEach(function(g){
+      html += '<div class="res-league">' + leagueFlag(g.league) + ' ' + g.league + '</div>';
+      g.matches.forEach(function(m){
+        n++;
+        var hn = n, an = n + 1; n++;
+        html += '<div class="res-match"><div class="res-teams"><span class="rn">' + hn + '.</span><span class="tn">' + teamMM(m.home) + '</span><span class="res-score">' + m.sh + ' - ' + m.sa + '</span><span class="tn" style="text-align:right">' + teamMM(m.away) + '</span><span class="rn" style="text-align:right">' + an + '.</span></div>';
+        html += '<div class="res-odds"><span class="ro">' + (m.side === 'h' ? m.hcp : '') + '</span><span class="gp">Gp' + m.over + '</span><span class="ro" style="text-align:right">' + (m.side === 'a' ? m.hcp : '') + '</span></div>';
+        if (m.home === 'Roma' && m.away === 'Sassuolo') html += '<div class="res-win">✅ အနိုင် 1,000 ကျပ်</div>';
+        html += '</div>';
+      });
+    });
+    box.innerHTML = html;
+  }
+  renderResults();
+  function mirrorOdds(o){
+    if (o.indexOf('+') >= 0) return o.replace('+', '-');
+    if (o.indexOf('-') >= 0) return o.replace('-', '+');
+    return o;
+  }
+  function tapTeamRow(el){
+    // အသင်းနံမည် နှိပ်ရင် အဲ့ အသင်းရဲ့ ဘော်ဒီ ကြေး ရွေးတယ် (Pho Nov 11 21:05) — same as tapping its odds box
+    var k = el.dataset.team;
+    var btn = document.querySelector('button[data-k="' + k + '"]');
+    if(btn) toggleOdd(btn);
+  }
+  // မောင်း အဆ တွက်နည်း (Pho Nov 12, bet365 ပုံစံ + စာရွက် အကောက်):
+  // leg factor တွေ မြှောက်, ပြီးမှ အကောက် နှုတ် — full win ×2, partial win ×(1+pyar/100),
+  // partial loss ×(1−pyar/100), push ×1, full loss = မောင်း တစ်ခုလုံး ရှုံး (0).
+  // အကောက် (Pho Nov 12 21:42, အဆင့်ဆင့်): ၂–၃ ပွဲ 15%, ၄–၇ ပွဲ 20%, ၈–၁၀ ပွဲ 30%.
+  function parlayPayout(stake, legs){
+    var mult = 1;
+    for (var i = 0; i < legs.length; i++) {
+      var lg = legs[i];
+      if (lg.res === 'loss') return 0;
+      if (lg.res === 'win') mult *= 2;
+      else if (lg.res === 'halfWin') mult *= (1 + lg.pyar / 100);
+      else if (lg.res === 'halfLoss') mult *= (1 - lg.pyar / 100);
+    }
+    var comm = legs.length <= 3 ? 0.15 : (legs.length <= 7 ? 0.20 : 0.30);
+    return Math.round(stake * mult * (1 - comm));
+  }
+  function toggleOdd(btn){
+    var k = btn.dataset.k;
+    var parts = k.split(':');
+    var mode = parts[0], idx = +parts[1], type = parts[2];
+    var sel = fbSel[mode];
+    var m = MATCHES[idx];
+    if (isMatchClosed(m)) { toast('ပိတ်သွားပြီ'); return; }
+    var card = btn.closest('.match');
+    var teams = card.querySelectorAll('.mteam');
+    function rowFor(t){ return t === 'hcp-h' ? teams[0] : (t === 'hcp-a' ? teams[1] : null); }
+    function clearBtn(o){
+      delete sel[o.dataset.k];
+      o.classList.remove('on');
+      var r = rowFor(o.dataset.k.split(':')[2]);
+      if (r) r.classList.remove('on');
+    }
+    if (sel[k]) { clearBtn(btn); }
+    else {
+      if (mode === 'maung') {
+        // မောင်း အများဆုံး ၁၀ သင်း (Pho Nov 12 21:19) — 11th match blocked
+        var pickedM = {};
+        Object.keys(sel).forEach(function(key){ pickedM[key.split(':')[1]] = true; });
+        if (!pickedM[idx] && Object.keys(pickedM).length >= 10) {
+          toast('မောင်း အများဆုံး ၁၀ သင်း ပဲ ထိုးလို့ရတယ်');
+          return;
+        }
+        // မောင်း: တပွဲမှာ ၁ကွက်ပဲ (Pho Nov 11 13:15) — clear every box in this match
+        card.querySelectorAll('.odd.on, .gcell.on').forEach(clearBtn);
+      } else {
+        // ဘော်ဒီ: per-column radio — body and goal columns independent
+        var groupCls = (type === 'hcp-h' || type === 'hcp-a') ? '.odd' : '.gcell';
+        card.querySelectorAll(groupCls + '.on').forEach(clearBtn);
+      }
+      var label = '';
+      var hh = teamMM(m.home), aa = teamMM(m.away);
+      // pick label stored ONE LINE (voucher shows it as-is, one line per pick — Pho Nov 11 21:58)
+      // odds = the listed line (m.hcp) as-is, next to the FAVORITE team only, NEVER mirrored (Pho Nov 11 21:51)
+      var hOdds = (m.hcpSide === 'h') ? ' <span class="ro">' + m.hcp + '</span>' : '';
+      var aOdds = (m.hcpSide === 'a') ? ' <span class="ro">' + m.hcp + '</span>' : '';
+      if (type === 'hcp-h') label = '<span class="pk">' + hh + '</span>' + hOdds + ' VS ' + aa + aOdds;
+      else if (type === 'hcp-a') label = hh + hOdds + ' VS ' + '<span class="pk">' + aa + '</span>' + aOdds;
+      else if (type === 'over') label = hh + ' VS ' + aa + ' · <span class="pk">ဂိုးပေါ် <span class="ro">' + m.over + '</span></span>';
+      else label = hh + ' VS ' + aa + ' · <span class="pk">ဂိုးအောက် <span class="ro">' + mirrorOdds(m.over) + '</span></span>';
+      sel[k] = label;
+      btn.classList.add('on');
+      var r = rowFor(type);
+      if (r) r.classList.add('on');
+    }
+    var n = Object.keys(sel).length;
+    if (mode === 'maung') document.getElementById('fbSelChip').textContent = n + ' မောင်း';
+    else if (mode === 'body') document.getElementById('fbBodyChip').textContent = n + ' ကွက်';
+  }
+  // ငွေ ရိုက်တာ — Maung ငွေထုတ် ပုံစံ (Pho Nov 11 21:14): [−] ငွေ [+] + အမြန် ခလုတ် 5000/10000/20000/50000
+  function adjAmt(id, d){
+    var el = document.getElementById(id);
+    var v = parseInt(el.value, 10);
+    if(isNaN(v)) v = 0;
+    v += d;
+    if(v < 0) v = 0;
+    el.value = v;
+  }
+  function setAmt(id, v){ document.getElementById(id).value = v; }
+  function placeFb(kind){
+    // မောင်း only — ဘော်ဒီ uses goConfirmBody() (per-pick amounts).
+    var mode = 'maung';
+    var sel = fbSel[mode];
+    var keys = Object.keys(sel);
+    var amtInput = document.getElementById('fbAmt');
+    var v = parseInt(amtInput.value, 10);
+    if (!keys.length) { toast('ကြေး အရင် ရွေးပါ'); return; }
+    if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if (v < 500) { toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
+    if (v > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    balance -= v;
+    var picks = keys.map(function(k){ return sel[k]; });
+    placed.fb.push({ kind: kind, picks: picks, amt: v });
+    keys.forEach(function(k){ delete sel[k]; });
+    document.querySelectorAll('#maungList .odd.on, #maungList .gcell.on').forEach(function(b){ b.classList.remove('on'); });
+    // BUG FIX (Pho Nov 11 19:28): .mteam rows also stayed red after Save — clear them too
+    document.querySelectorAll('#maungList .mteam.on').forEach(function(r){ r.classList.remove('on'); });
+    document.getElementById('fbSelChip').textContent = '0 မောင်း';
+    amtInput.value = '';
+    toast('ထိုးပြီးပြီ — ' + kind + ' ' + keys.length + ' ပွဲ, ' + fmt(v) + ' ကျပ် (နမူနာပါ)');
+    renderTotals();
+  }
+  // ဘော်ဒီ အတည်ပြု (Pho Nov 11 19:28): ၁ပွဲကို ငွေ ၁ခု — each pick its own amount, Total = sum
+  var amtBodyMap = {};
+  var stepBody = 500; // football min bet 500 (Pho Nov 11 21:47 — 100 cannot be bet)
+  function goConfirmBody(){
+    var keys = Object.keys(fbSel.body);
+    if(!keys.length){ toast('ကြေး အရင် ရွေးပါ'); return; }
+    var kept = {};
+    keys.forEach(function(k){ kept[k] = amtBodyMap[k] || 0; });
+    amtBodyMap = kept;
+    renderConfirmBody();
+    go('scr-body-confirm');
+  }
+  // confirm screen only: stack the one-line label as home / Vs / away for the narrow Party column (Pho Nov 11 21:43)
+  function stackLabel(l){ return l.replace(' VS ', '<br><span class="vs">Vs</span><br>'); }
+  function renderConfirmBody(){
+    var keys = Object.keys(amtBodyMap);
+    var out = '';
+    keys.forEach(function(k, i){
+      var a = amtBodyMap[k] || 0;
+      out += '<tr><td>' + (i + 1) + '</td><td>' + stackLabel(fbSel.body[k]) + '</td><td><span class="amt-cell"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',-1)">−</button><input class="camt-input" id="camtBody-' + k + '" type="number" value="' + a + '" min="0" inputmode="numeric" onchange="setAmtBody(\'' + k + '\', this.value)"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',1)">+</button></span></td></tr>';
+    });
+    document.getElementById('confirmBodyBody').innerHTML = out;
+    updateConfirmTotalBody();
+  }
+  function updateConfirmTotalBody(){
+    var t = 0;
+    Object.keys(amtBodyMap).forEach(function(k){ t += amtBodyMap[k] || 0; });
+    document.getElementById('confirmBodyTotal').textContent = fmt(t);
+  }
+  function setStepBody(v){ stepBody = parseInt(v, 10) || 500; }
+  function adjAmtBody(k, dir){
+    var a = (amtBodyMap[k] || 0) + dir * stepBody;
+    if(a < 0) a = 0;
+    amtBodyMap[k] = a;
+    var el = document.getElementById('camtBody-' + k);
+    if(el) el.value = a;
+    updateConfirmTotalBody();
+  }
+  function setAmtBody(k, v){
+    var a = parseInt(v, 10);
+    if(isNaN(a) || a < 0) a = 0;
+    amtBodyMap[k] = a;
+    var el = document.getElementById('camtBody-' + k);
+    if(el) el.value = a;
+    updateConfirmTotalBody();
+  }
+  function clearAmtBody(){
+    Object.keys(amtBodyMap).forEach(function(k){ amtBodyMap[k] = 0; });
+    renderConfirmBody();
+  }
+  function confirmBetBody(){
+    var keys = Object.keys(amtBodyMap);
+    var total = 0;
+    keys.forEach(function(k){ total += amtBodyMap[k] || 0; });
+    if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    var picks = keys.map(function(k){ return { label: fbSel.body[k], amt: amtBodyMap[k] || 0 }; }).filter(function(x){ return x.amt > 0; });
+    if(!picks.length){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if(picks.some(function(x){ return x.amt < 500; })){ toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
+    balance -= total;
+    placed.fb.push({ kind: 'ဘော်ဒီ', picks: picks, amt: total });
+    keys.forEach(function(k){ delete fbSel.body[k]; });
+    document.querySelectorAll('#bodyList .odd.on, #bodyList .gcell.on, #bodyList .mteam.on').forEach(function(b){ b.classList.remove('on'); });
+    document.getElementById('fbBodyChip').textContent = '0 ကွက်';
+    toast('လုပ်ဆောင်ချက်အောင်မြင်');
+    amtBodyMap = {};
+    renderTotals();
+    go('scr-body');
+  }
+  function go(id){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+    // 2D ထိုးကွက် စာမျက်နှာတွေမှာ အောက်ဆုံး nav ကို ဖျောက် — bet bar က အောက်ဆုံးမှာ ကပ်နေရမှာ (Maung ပုံစံ)
+    var navEl = document.querySelector('nav');
+    if(navEl) navEl.style.display = (id === 'scr-2d' || id === 'scr-2d-confirm' || id === 'scr-3d' || id === 'scr-3d-confirm' || id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm') ? 'none' : '';
+    document.querySelectorAll('nav button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.scr === id || (b.dataset.scr === 'scr-home' && (id === 'scr-2d' || id === 'scr-2d-confirm' || id === 'scr-3d' || id === 'scr-3d-confirm' || id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-vouch')));
+    });
+    window.scrollTo(0,0);
+  }
+
+  function setPay(id, el){
+    document.querySelectorAll('#'+id+' button').forEach(function(b){ b.classList.remove('on'); });
+    el.classList.add('on');
+  }
+  function setVouchTab(t){
+    vouchTab = t;
+    document.querySelectorAll('.vtab').forEach(function(b){ b.classList.toggle('on', b.dataset.vt === t); });
+    renderTotals();
+  }
+  // ငွေစာရင်း tabs — Maung ပုံစံ (Pho Nov 12: Ball / 2D / 3D / ငွေစာရင်း)
+  var logTab = 'ball';
+  function setLogTab(t){
+    logTab = t;
+    document.querySelectorAll('.ltab').forEach(function(b){ b.classList.toggle('on', b.dataset.lt === t); });
+    document.getElementById('logBall').style.display = t === 'ball' ? '' : 'none';
+    document.getElementById('log2d').style.display = t === '2d' ? '' : 'none';
+    document.getElementById('log3d').style.display = t === '3d' ? '' : 'none';
+    document.getElementById('logMoney').style.display = t === 'money' ? '' : 'none';
+    if (t === 'ball') { renderBallLog(); creditBallWins(); }
+  }
+  // လက်ကျန်ငွေ အနိုင် ပေါင်း (Pho Nov 12 10:38: ပိုက်ဆံ Update ဖြစ်ရမယ် — ထိုးရင် နှုတ် (ရှိပြီး), နိုင်ရင် ပေါင်း)
+  // 2D နိုင် = ထိုးငွေ x 90; 3D နိုင် = ထိုးငွေ x 650; ဘောပွဲ နိုင် = ကြေး အတိုင်း အမြတ်
+  var ballCredited = false;
+  function creditBallWins(){
+    if (ballCredited) return;
+    ballCredited = true;
+    var total = 0;
+    BALL_SETTLED.forEach(function(b){ if (b.won) total += (b.profit || 0); });
+    if (total > 0) {
+      balance += total;
+      renderTotals();
+      toast('အနိုင်ရငွေ ' + fmt(total) + ' ကျပ် ပေါင်းပြီ');
+    }
+  }
+  // ပွဲပြီးတဲ့ ဘောပွဲ ထိုးကြေး — နမူနာ (Nov 7 အမှန် ရလဒ်, RESULTS7)
+  // မောင်း: လိဒ်စ် နိုင် + အာဆင်နယ် ရှုံး (1-0, ကြေး 2-25 မကျော်) + ဖူလ်ဟမ် သရေ (ကြေး =-5 မကျော်) → အရှုံး, Total 500 ✖️
+  // ဘော်ဒီ: ရိုးမား 3-0 (ကြေး 1-5 ကျော်) → အနိုင် 1000 ✅
+  var BALL_SETTLED = [
+    { time: '2026-11-07 10:55:13pm', kind: 'မောင်း', amt: 500, won: false, legs: [
+      { home: 'Leeds', away: 'Tottenham', hcp: '=', score: '1:0', pick: 'h' },
+      { home: 'Arsenal', away: 'Hull', hcp: '2-25', score: '1:0', pick: 'h' },
+      { home: 'Fulham', away: 'Newcastle', hcp: '=-5', score: '1:1', pick: 'h' }
+    ]},
+    { time: '2026-11-07 09:30:00pm', kind: 'ဘော်ဒီ', amt: 1000, won: true, profit: 1000, legs: [
+      { home: 'Roma', away: 'Sassuolo', hcp: '1-5', score: '3:0', pick: 'h' }
+    ]}
+  ];
+  function renderBallLog(){
+    var el = document.getElementById('logBall');
+    if (!el) return;
+    var out = '';
+    BALL_SETTLED.forEach(function(b){
+      var n = 0;
+      var rows = b.legs.map(function(l){
+        var hn = ++n, an = ++n;
+        var hh = teamMM(l.home), aa = teamMM(l.away);
+        var game = hn + '.' + hh + '(<span class="ro">' + l.hcp + '</span>) VS ' + an + '.' + aa;
+        var sel = (l.pick === 'h') ? hn + '.' + hh : an + '.' + aa;
+        return '<tr><td>' + game + '</td><td>' + l.score + '</td><td>' + sel + '</td><td>-</td></tr>';
+      }).join('');
+      var mark = b.won ? '✅' : '✖️';
+      out += '<div class="ball-time"><span>' + b.time + '</span><span>⌃</span></div>'
+        + '<table class="ball-tbl"><tr><th>Game<br>' + b.kind + '</th><th>Result</th><th>Selected</th><th></th></tr>'
+        + rows + '</table>'
+        + '<div class="ball-tot"><span>Total:</span><span>' + fmt(b.amt) + ' <span class="mk">' + mark + '</span></span></div>';
+    });
+    el.innerHTML = out;
+  }
+  renderBallLog();
+  function renderTotals(){
+    var t2 = 0, t3 = 0;
+    placed['2d'].forEach(function(b){ b.forEach(function(p){ t2 += p.amt; }); });
+    placed['3d'].forEach(function(b){ b.forEach(function(p){ t3 += p.amt; }); });
+    document.getElementById('tot2d').textContent = fmt(t2) + ' ကျပ်';
+    document.getElementById('tot3d').textContent = fmt(t3) + ' ကျပ်';
+    document.getElementById('walletTop').textContent = fmt(balance);
+    document.getElementById('walletBig').textContent = fmt(balance);
+    document.getElementById('walletProf').textContent = fmt(balance) + ' ကျပ်';
+    // ဘောက်ချာ မရောပါနဲ့ (Pho Nov 11 13:26-13:27): tab ရွေးထားတဲ့ ဂိမ်းတစ်ခုတည်းပဲ ပြ
+    // စာရွက်ပုံလို (Pho Nov 11 13:35, 13:48): တရွက် နံပါတ်တခု — slip တစ်ခုချင်း NO.N, အပေါ်က စာအပို မရှိ
+    var wrap = document.getElementById('liveVouchWrap');
+    var emptyBox = document.getElementById('vouchEmpty');
+    var items = vouchTab === '2d' ? placed['2d'] : (vouchTab === '3d' ? placed['3d'] : placed.fb);
+    var hasSample = (vouchTab === '2d' || vouchTab === '3d' || vouchTab === '1d');
+    if(!items.length && !hasSample){
+      if (wrap) wrap.style.display = 'none';
+      if (emptyBox) emptyBox.style.display = '';
+    } else {
+      if (wrap) wrap.style.display = '';
+      if (emptyBox) emptyBox.style.display = 'none';
+      var out = '';
+      if (vouchTab === '1d') {
+        // ဘောပွဲ: ထိုးတဲ့အကြိမ်တိုင်း သီးသန့် စာရွက် (NO.1, NO.2, ...); ဘော်ဒီ = ၁ပွဲချင်း ငွေ (per-pick amounts)
+        out = items.map(function(p, i){
+          var rows = '<div class="vno">NO.' + (i + 1) + '</div>';
+          if (p.kind === 'ဘော်ဒီ') {
+            rows += p.picks.map(function(pk){
+              return '<div class="vrow"><span>' + pk.label + '</span><span>' + fmt(pk.amt) + ' ကျပ်</span></div>';
+            }).join('');
+          } else {
+            rows += p.picks.map(function(pk){
+              return '<div class="vrow"><span>' + pk + '</span><span></span></div>';
+            }).join('');
+            if (p.kind === 'မောင်း') rows += '<div class="vrow" style="font-weight:bold"><span>' + p.picks.length + 'မောင်း</span><span>' + fmt(p.amt) + '</span></div>';
+          }
+          rows += '<div class="vtot"><span>Total</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
+          return '<div class="vouch">' + rows + '</div>';
+        }).join('');
+      } else {
+        // 2D/3D: တခါ save = ဘောက်ချာ၁စောင် (Pho Nov 11 19:19, CORRECTS v3.59) — one Save = one slip (NO.1, NO.2, ...), all numbers from that Save in it; 3 saves = 3 slips
+        out = items.map(function(batch, i){
+          var t = 0;
+          var rows = '<div class="vno">NO.' + (i + 1) + '</div>';
+          rows += batch.map(function(p){
+            t += p.amt;
+            return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
+          }).join('');
+          rows += '<div class="vtot"><span>Total</span><span>' + fmt(t) + ' ကျပ်</span></div>';
+          return '<div class="vouch">' + rows + '</div>';
+        }).join('');
+      }
+      if (wrap) wrap.innerHTML = out;
+    }
+    var s2 = document.getElementById('vouchSample2d');
+    var s3 = document.getElementById('vouchSample3d');
+    var s1 = document.getElementById('vouchSample1d');
+    if (s2) s2.style.display = vouchTab === '2d' ? '' : 'none';
+    if (s3) s3.style.display = vouchTab === '3d' ? '' : 'none';
+    if (s1) s1.style.display = vouchTab === '1d' ? '' : 'none';
+    var v2 = document.getElementById('vouch2d');
+    if(v2){
+      var t2v = 0;
+      if(!placed['2d'].length){ v2.innerHTML = ''; }
+      else {
+        v2.innerHTML = placed['2d'].map(function(batch, i){
+          var tb = 0;
+          var rows = '<div class="vno">NO.' + (i + 1) + '</div>';
+          rows += batch.map(function(p){ tb += p.amt; return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>'; }).join('');
+          rows += '<div class="vtot"><span>Total</span><span>' + fmt(tb) + ' ကျပ်</span></div>';
+          return '<div class="vouch">' + rows + '</div>';
+        }).join('');
+      }
+    }
+    var v3 = document.getElementById('vouch3d');
+    if(v3){
+      var t3v = 0;
+      if(!placed['3d'].length){ v3.innerHTML = ''; }
+      else {
+        v3.innerHTML = placed['3d'].map(function(batch, i){
+          var tb = 0;
+          var rows = '<div class="vno">NO.' + (i + 1) + '</div>';
+          rows += batch.map(function(p){ tb += p.amt; return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>'; }).join('');
+          rows += '<div class="vtot"><span>Total</span><span>' + fmt(tb) + ' ကျပ်</span></div>';
+          return '<div class="vouch">' + rows + '</div>';
+        }).join('');
+      }
+    }
+  }
+
+  var toastTimer = null;
+  function requestTopup(){
+    var v = parseInt(document.getElementById('topupAmt').value, 10);
+    if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    var method = 'KBPay';
+    var on = document.querySelector('#payIn .on');
+    if (on) method = on.textContent;
+    var msg = 'တောင်းဆိုမှု ပို့ပြီးပြီ — ' + fmt(v) + ' ကျပ် (' + method + ') — admin အတည်ပြုရင် လက်ကျန်ထဲ ရောက်မယ် (နမူနာပါ)';
+    document.getElementById('topupMsg').textContent = msg;
+    document.getElementById('topupAmt').value = '';
+    moneyHist.unshift({ t: 'ငွေသွင်း တောင်းဆိုမှု (' + method + ')', amt: v, dir: 1 });
+    toast(msg);
+    renderMoneyHist();
+  }
+  var wdBank = 'KBPay';
+  function requestWithdraw(){
+    var v = parseInt(document.getElementById('wdAmt').value, 10);
+    var acc = document.getElementById('wdAcc').value.trim();
+    var phone = document.getElementById('wdPhone').value.trim();
+    var name = document.getElementById('wdName').value.trim();
+    if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if (!phone) { toast('ဖုန်းနံပါတ် ထည့်ပါ'); return; }
+    if (!name) { toast('အမည် ထည့်ပါ'); return; }
+    if (!acc) { toast('လက်ခံမယ့် နံပါတ် ထည့်ပါ'); return; }
+    if (v > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    var msg = 'တောင်းဆိုမှု ပို့ပြီးပြီ — ' + fmt(v) + ' ကျပ် (' + wdBank + ', ' + name + ', ' + phone + ', ' + acc + ') — admin အတည်ပြုရင် လွှဲပေးမယ် (နမူနာပါ)';
+    document.getElementById('wdMsg').textContent = msg;
+    document.getElementById('wdAmt').value = '';
+    document.getElementById('wdAcc').value = '';
+    document.getElementById('wdPhone').value = '';
+    document.getElementById('wdName').value = '';
+    moneyHist.unshift({ t: 'ငွေထုတ် တောင်းဆိုမှု', amt: v, dir: -1 });
+    toast(msg);
+    renderMoneyHist();
+  }
+  function renderMoneyHist(){
+    var box = document.getElementById('moneyHist');
+    if (!box) return;
+    box.innerHTML = moneyHist.map(function(h){
+      var sign = h.dir > 0 ? '+' : '-';
+      var col = h.dir > 0 ? '#166534' : '#991b1b';
+      return '<div class="hist-row"><span>' + h.t + '</span><b style="color:' + col + '">' + sign + fmt(h.amt) + '</b></div>';
+    }).join('');
+  }
+  var moneyHist = [
+    { t: '10.11.2026 — ငွေသွင်း (KBPay)', amt: 100000, dir: 1 },
+    { t: '10.11.2026 — 2D အနိုင်', amt: 40000, dir: 1 },
+    { t: '10.11.2026 — 2D ထိုး', amt: 10000, dir: -1 },
+    { t: '09.11.2026 — ငွေထုတ်', amt: 50000, dir: -1 }
+  ];
+  function changePw(){
+    var oldPw = document.getElementById('pwOld').value;
+    var nw = document.getElementById('pwNew').value;
+    var nw2 = document.getElementById('pwNew2').value;
+    var msg = document.getElementById('pwMsg');
+    if(!oldPw || !nw || !nw2){ msg.textContent = 'အကွက် အားလုံး ဖြည့်ပါ။'; return; }
+    if(nw !== nw2){ msg.textContent = 'စကားဝှက် အသစ် ၂ ခု မတူဘူး။'; return; }
+    if(nw === oldPw){ msg.textContent = 'စကားဝှက် အသစ်က အဟောင်းနဲ့ တူတယ်။'; return; }
+    document.getElementById('pwOld').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwNew2').value = '';
+    msg.textContent = '';
+    toast('စကားဝှက် ပြောင်းပြီ');
+    go('scr-user');
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.style.display = 'none'; }, 2600);
+  }
+  function doLogin(){
+    var acc = document.getElementById('loginAcc').value.trim();
+    if(!acc){ toast('Account ထည့်ပါ'); return; }
+    document.getElementById('phoneBox').classList.remove('logged-out');
+    go('scr-home');
+    toast('ကြိုဆိုပါတယ် ' + acc + ' (နမူနာပါ)');
+  }
+  function showLogin(){
+    document.getElementById('phoneBox').classList.add('logged-out');
+    go('scr-login');
+  }
+  applySession();
+  renderTotals();
+  updatePreview2d();
+</script>
+<script src="wiring.js"></script>
+</body>
+</html>
