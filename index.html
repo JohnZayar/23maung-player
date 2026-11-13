@@ -99,7 +99,7 @@
   .pay-opt { display: flex; gap: 8px; margin-bottom: 12px; }
   .pay-opt button { flex: 1; border: 2px solid #cbd5e1; background: #fff; border-radius: 12px; padding: 14px 6px; font-size: 16px; font-weight: bold; font-family: inherit; cursor: pointer; }
   .pay-opt button.on { border-color: #14532d; background: #f0fdf4; }
-  input[type=number], input[type=text], input[type=password] { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; font-size: 16px; font-family: inherit; margin-bottom: 10px; }
+  input[type=number], input[type=text], input[type=password], input[type=tel] { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; font-size: 16px; font-family: inherit; margin-bottom: 10px; }
   .terms-list { font-size: 14px; line-height: 1.7; color: #334155; padding-left: 18px; margin: 0; }
   .terms-list li { margin-bottom: 8px; }
   .hist-row { display: flex; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
@@ -236,7 +236,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v1.4 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v1.5 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -584,7 +584,7 @@
     <button class="menu-row" onclick="go('scr-log')"><span>ငွေစာရင်း မှတ်တမ်း</span><span>›</span></button>
     <button class="menu-row" onclick="go('scr-pw')"><span>စကားဝှက် ပြောင်းမည်</span><span>›</span></button>
     <button class="menu-row" onclick="go('scr-terms')"><span>စည်းကမ်း သတ်မှတ်ချက်များ</span><span>›</span></button>
-    <button class="menu-row" onclick="toast('နမူနာပါ')"><span>Cache Clear</span><span>›</span></button>
+    <button class="menu-row" onclick="clearCache()"><span>Cache Clear</span><span>›</span></button>
     <button class="menu-row" onclick="go('scr-money')"><span>ငွေသွင်း / ငွေထုတ်</span><span>›</span></button>
   </div>
 
@@ -1289,6 +1289,23 @@
     var box = document.getElementById('phoneBox');
     if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-2d' || id === 'scr-3d' || id === 'scr-2d-confirm' || id === 'scr-3d-confirm');
     window.scrollTo(0,0);
+  }
+
+  // Cache Clear (Pho Nov 13): clear the app's stored data BUT keep the
+  // login — the auth keys (m23_token / m23_player / m23_auth_collection)
+  // are preserved in both stores, so the user stays logged in.
+  function clearCache(){
+    var keep = ['m23_token', 'm23_player', 'm23_auth_collection'];
+    [localStorage, sessionStorage].forEach(function(store){
+      try {
+        var saved = {};
+        keep.forEach(function(k){ var v = store.getItem(k); if(v !== null) saved[k] = v; });
+        store.clear();
+        Object.keys(saved).forEach(function(k){ store.setItem(k, saved[k]); });
+      } catch(e){}
+    });
+    toast('Cache ရှင်းပြီးပြီ');
+    setTimeout(function(){ location.reload(); }, 700);
   }
 
   function setPay(id, el){
