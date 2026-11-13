@@ -236,7 +236,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v1.1 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v1.2 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -283,13 +283,6 @@
     <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>မောင်း (<span id="maungCount">9</span>)</h3><span class="fb-bal-amt">50,000</span></div>
     <div id="maungList"></div>
     <div class="fb-bar">
-      <div class="fb-chips">
-        <button onclick="setAmt('fbAmt',500)">500</button>
-        <button onclick="setAmt('fbAmt',1500)">1500</button>
-        <button onclick="setAmt('fbAmt',2000)">2000</button>
-        <button onclick="setAmt('fbAmt',2500)">2500</button>
-        <button onclick="setAmt('fbAmt',3000)">3000</button>
-      </div>
       <div class="fb-controls">
         <span class="fb-count" id="fbSelChip">0 မောင်း</span>
         <button class="fb-step" onclick="adjAmt('fbAmt',-500)">−</button>
@@ -339,8 +332,8 @@
 
   <!-- 2D ထိုးမယ် -->
   <div class="screen" id="scr-2d">
+    <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>2D</h3><span class="rate-badge">90ဆ</span><span class="badge open" id="badge2d">ဖွင့်နေတယ်</span><span class="fb-bal-amt">50,000</span></div>
     <div class="card">
-      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>2D</h3><span class="rate-badge">90ဆ</span><span class="badge open" id="badge2d">ဖွင့်နေတယ်</span></div>
       <div class="grid2d" id="grid2d"></div>
       <!-- TEMP (Pho 23:10, test only): bet3 + pad hidden, restore by removing temp-hide -->
       <div class="bet3 temp-hide">
@@ -379,8 +372,8 @@
 
   <!-- 3D ထိုးမယ် (Maung ပုံစံ, v3.55) -->
   <div class="screen" id="scr-3d">
+    <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>3D</h3><span class="rate-badge">650ဆ</span><span class="badge open" id="badge3d">ဖွင့်နေတယ်</span><span class="fb-bal-amt">50,000</span></div>
     <div class="card">
-      <div class="row"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>3D</h3><span class="rate-badge">650ဆ</span><span class="badge open" id="badge3d">ဖွင့်နေတယ်</span></div>
       <div class="muted" id="sess3dLine" style="margin:2px 0 8px">16.11.2026</div>
       <div class="digit3d">
         <select id="dig3d0" onchange="setDigit3d(0,this.value)"></select>
@@ -1296,7 +1289,7 @@
       b.classList.toggle('on', b.dataset.scr === id || (b.dataset.scr === 'scr-home' && (id === 'scr-2d' || id === 'scr-2d-confirm' || id === 'scr-3d' || id === 'scr-3d-confirm' || id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-vouch')));
     });
     var box = document.getElementById('phoneBox');
-    if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results');
+    if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-2d' || id === 'scr-3d' || id === 'scr-2d-confirm' || id === 'scr-3d-confirm');
     window.scrollTo(0,0);
   }
 
