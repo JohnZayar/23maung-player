@@ -794,6 +794,7 @@
     M23.bets2d.forEach(function (b) { if (!cur2 || b.session === cur2) t2 += b.total || 0; });
     M23.bets3d.forEach(function (b) { if (!cur3 || b.session === cur3) t3 += b.total || 0; });
     var wTop = document.getElementById('walletTop'); if (wTop) wTop.textContent = fmt(balance);
+    document.querySelectorAll('.fb-bal-amt').forEach(function (el) { el.textContent = fmt(balance); });
     var wBig = document.getElementById('walletBig'); if (wBig) wBig.textContent = fmt(balance);
     var wProf = document.getElementById('walletProf'); if (wProf) wProf.textContent = fmt(balance) + ' ကျပ်';
     var tot2 = document.getElementById('tot2d'); if (tot2) tot2.textContent = fmt(t2) + ' ကျပ်';
