@@ -204,21 +204,21 @@
   }
   M23.applySettings = applySettings;
 
-  // Football on/off (Pho Nov 13, option A): when Admin turns football OFF,
-  // the home မောင်း/ဘော်ဒီ buttons go grey with 'ပိတ်ထားတယ်'. Results and
-  // vouchers stay visible. Default ON when the field is missing.
+  // Football on/off (Pho Nov 14 22:30): when Admin turns football OFF,
+  // the home မောင်း/ဘော်ဒီ buttons DISAPPEAR entirely (no grey, no label).
+  // Results and vouchers stay visible. Default ON when the field is missing.
   function applyFootballEnabled() {
     var on = !M23.settings || M23.settings.football_enabled !== false;
     M23.footballOn = on;
     var m = document.getElementById('homeBtnMaung');
     var b = document.getElementById('homeBtnBody');
     if (m) {
-      m.classList.toggle('fb-off', !on);
-      m.innerHTML = on ? 'မောင်း' : 'မောင်း<small>ပိတ်ထားတယ်</small>';
+      m.classList.toggle('fb-hidden', !on);
+      if (on) m.innerHTML = 'မောင်း';
     }
     if (b) {
-      b.classList.toggle('fb-off', !on);
-      b.innerHTML = on ? 'ဘော်ဒီ' : 'ဘော်ဒီ<small>ပိတ်ထားတယ်</small>';
+      b.classList.toggle('fb-hidden', !on);
+      if (on) b.innerHTML = 'ဘော်ဒီ';
     }
   }
 
