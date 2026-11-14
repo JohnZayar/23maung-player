@@ -199,8 +199,36 @@
     M23.minFb = (s.min_fb != null) ? s.min_fb : 500;
     M23.min2d3d = (s.min_2d3d != null) ? s.min_2d3d : 100;
     M23.limitFb = (s.limit_fb != null) ? s.limit_fb : 8000;
+    M23.footballOn = (s.football_enabled !== false);
+    applyFootballEnabled();
   }
   M23.applySettings = applySettings;
+
+  // Football on/off (Pho Nov 13, option A): when Admin turns football OFF,
+  // the home မောင်း/ဘော်ဒီ buttons go grey with 'ပိတ်ထားတယ်'. Results and
+  // vouchers stay visible. Default ON when the field is missing.
+  function applyFootballEnabled() {
+    var on = !M23.settings || M23.settings.football_enabled !== false;
+    M23.footballOn = on;
+    var m = document.getElementById('homeBtnMaung');
+    var b = document.getElementById('homeBtnBody');
+    if (m) {
+      m.classList.toggle('fb-off', !on);
+      m.innerHTML = on ? 'မောင်း' : 'မောင်း<small>ပိတ်ထားတယ်</small>';
+    }
+    if (b) {
+      b.classList.toggle('fb-off', !on);
+      b.innerHTML = on ? 'ဘော်ဒီ' : 'ဘော်ဒီ<small>ပိတ်ထားတယ်</small>';
+    }
+  }
+
+  // Re-read m23_settings (football on/off) on the 30s auto-refresh, so an
+  // Admin toggle flip reaches the player without a reload.
+  async function refreshSettings() {
+    var s = await safe(PB.getList('m23_settings', { filter: "key='main'", perPage: 1 }));
+    if (s && s.items && s.items[0]) { M23.settings = s.items[0]; M23.flags.settings = true; applySettings(); }
+  }
+  M23.refreshSettings = refreshSettings;
 
   function pickSessions() {
     function pick(game) {
@@ -382,9 +410,10 @@
       if (!M23.player || document.hidden) return;
       refreshData();
       refreshFixtures();
+      refreshSettings();
     }, 30000);
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && M23.player) { refreshData(); refreshFixtures(); }
+      if (!document.hidden && M23.player) { refreshData(); refreshFixtures(); refreshSettings(); }
     });
   }
 
@@ -730,6 +759,7 @@
 
   // --- football: parlay ------------------------------------------------------
   window.placeFb = async function (kind) {
+    if (M23.settings && M23.settings.football_enabled === false) { toast('ဘောပွဲ ပိတ်ထားတယ်'); return; }
     var sel = fbSel.maung;
     var keys = Object.keys(sel);
     var amtInput = document.getElementById('fbAmt');
@@ -1120,6 +1150,11 @@
   // --- nav refresh ---------------------------------------------------------------
   if (_orig.go) {
     window.go = function (id) {
+      // Football OFF: block entering the မောင်း/ဘော်ဒီ bet screens.
+      if ((id === 'scr-maung' || id === 'scr-body') && M23.settings && M23.settings.football_enabled === false) {
+        toast('ဘောပွဲ ပိတ်ထားတယ်');
+        return;
+      }
       _orig.go(id);
       if (!M23.loaded || !M23.player) return;
       if (id === 'scr-noti') renderNotices();
