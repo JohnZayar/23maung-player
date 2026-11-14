@@ -1030,10 +1030,18 @@
   M23.renderNotices = renderNotices;
 
   // --- top-up / withdraw --------------------------------------------------------
+  // FIX #6 (v1.7): in-flight guard — a double-tap on Submit used to send 2
+  // top-up requests ("1 sent → 2 arrive"). While one is pending, further
+  // submits are ignored and the submit button is disabled.
+  var topupInFlight = false;
   window.requestTopup = async function () {
     var amtEl = document.getElementById('topupAmt');
     var v = parseInt(amtEl ? amtEl.value : '', 10);
     if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
+    if (topupInFlight) return; // already sending — ignore this tap
+    topupInFlight = true;
+    var topupBtn = document.querySelector('button[onclick="requestTopup()"]');
+    if (topupBtn) topupBtn.disabled = true;
     var method = 'KBPay';
     var on = document.querySelector('#payIn .on');
     if (on) method = on.textContent.trim();
@@ -1051,6 +1059,7 @@
       var sn = document.getElementById('topupShotName'); if (sn) sn.textContent = '';
       toast(msg);
     } catch (e) { toast((e && e.message) || 'တောင်းဆိုမှု ပို့လို့ မရဘူး'); }
+    finally { topupInFlight = false; if (topupBtn) topupBtn.disabled = false; }
   };
 
   window.requestWithdraw = async function () {
