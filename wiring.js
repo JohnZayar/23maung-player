@@ -575,6 +575,12 @@
     var pw = pwEl ? pwEl.value : '';
     if (!acc) { toast('Account ထည့်ပါ'); return; }
     if (!pw) { toast('Password ထည့်ပါ'); return; }
+    // Short-name login (Pho): player types only the short name; PocketBase
+    // still needs a full email, so normalise before auth:
+    // "005" -> "005@23maung.local"; "005@23maung" -> "005@23maung.local";
+    // a full email (e.g. test001@23maung.local) is used as-is.
+    if (acc.indexOf('@') < 0) acc = acc + '@23maung.local';
+    else if (acc.slice(-8) === '@23maung') acc = acc + '.local';
     var rem = document.getElementById('loginRem');
     PB.setPersist(!rem || !!rem.checked);
     try {
