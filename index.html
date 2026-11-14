@@ -38,6 +38,8 @@
   .game-btn { border: none; border-radius: 16px; padding: 26px 10px; font-size: 22px; font-weight: bold; font-family: inherit; cursor: pointer; color: #fde047; background: #1e3a5f; box-shadow: 0 3px 6px rgba(0,0,0,.2); }
   .game-btn small { display: block; font-size: 12px; font-weight: normal; opacity: .85; margin-top: 4px; color: #fff; }
   .game-btn:active { transform: scale(.97); }
+  .game-btn.fb-off { background: #6b7280; color: #d1d5db; cursor: not-allowed; box-shadow: none; }
+  .game-btn.fb-off small { color: #e5e7eb; }
   .btn-red { background: #d92b2b; color: #fff; border: none; border-radius: 12px; padding: 14px; width: 100%; font-size: 18px; font-weight: bold; font-family: inherit; cursor: pointer; }
   .btn-red:disabled { background: #cbd5e1; color: #64748b; }
   .btn-green { background: #14532d; color: #fff; border: none; border-radius: 12px; padding: 13px; width: 100%; font-size: 17px; font-weight: bold; font-family: inherit; cursor: pointer; }
@@ -236,7 +238,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v1.8 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v1.9 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -270,8 +272,8 @@
     <div class="grid2">
       <button class="game-btn" onclick="go('scr-2d')">2D</button>
       <button class="game-btn" onclick="go('scr-3d')">3D</button>
-      <button class="game-btn" onclick="go('scr-maung')">မောင်း</button>
-      <button class="game-btn" onclick="go('scr-body')">ဘော်ဒီ</button>
+      <button class="game-btn" id="homeBtnMaung" onclick="go('scr-maung')">မောင်း</button>
+      <button class="game-btn" id="homeBtnBody" onclick="go('scr-body')">ဘော်ဒီ</button>
       <button class="game-btn" onclick="go('scr-results')">ပွဲရလဒ်</button>
       <button class="game-btn" onclick="go('scr-vouch')">ဘောက်ချာ</button>
     </div>
