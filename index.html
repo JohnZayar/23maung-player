@@ -169,8 +169,6 @@
   .amt-step { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   .amt-step input { flex: 1; margin: 0; }
   .amt-step .step-btn { flex: 0 0 44px; width: 44px; height: 44px; }
-  .amt-chips { display: flex; gap: 6px; margin-bottom: 12px; }
-  .amt-chips button { flex: 1; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 8px; padding: 10px 4px; font-size: 14px; font-weight: bold; font-family: inherit; color: #1e3a5f; cursor: pointer; }
   .fb-bar input { margin: 0; flex: 1; background: #dbeafe; border-color: #93c5fd; }
   .fb-bar select { margin: 0; flex: 1; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 10px; padding: 10px 8px; font-size: 15px; font-family: inherit; font-weight: bold; color: #1e3a5f; }
   .fb-bar .btn-red { width: auto; padding: 10px 16px; font-size: 16px; white-space: nowrap; }
@@ -237,7 +235,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.1 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.2 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -500,13 +498,6 @@
         <input type="number" id="topupAmt" placeholder="ငွေပမာဏ (ကျပ်)">
         <button class="step-btn" onclick="adjAmt('topupAmt',500)">+</button>
       </div>
-      <div class="amt-chips">
-        <button onclick="setAmt('topupAmt',500)">500</button>
-        <button onclick="setAmt('topupAmt',1500)">1500</button>
-        <button onclick="setAmt('topupAmt',2000)">2000</button>
-        <button onclick="setAmt('topupAmt',2500)">2500</button>
-        <button onclick="setAmt('topupAmt',3000)">3000</button>
-      </div>
       <div class="note">လွှဲရမယ့် အကောင့်: KBPay — 09xxxxxxxxx (ဆရာ့ အကောင့်)<br>လွှဲပြီးရင် screenshot တင်ပြီး ပို့မယ် — admin အတည်ပြုရင် ပိုက်ဆံအိတ်ထဲ ရောက်မယ်။</div>
       <button class="btn-ghost" style="width:100%;margin-bottom:10px" onclick="document.getElementById('topupShot').click()">+ လွှဲပြီးကြောင်း screenshot တင်မယ်</button>
       <input type="file" id="topupShot" accept="image/*" style="display:none" onchange="document.getElementById('topupShotName').textContent=this.files[0]?('ရွေးပြီး: '+this.files[0].name):''">
@@ -527,13 +518,6 @@
         <button class="step-btn" onclick="adjAmt('wdAmt',-500)">−</button>
         <input type="number" id="wdAmt" placeholder="ထုတ်မယ့် ငွေပမာဏ (ကျပ်)">
         <button class="step-btn" onclick="adjAmt('wdAmt',500)">+</button>
-      </div>
-      <div class="amt-chips">
-        <button onclick="setAmt('wdAmt',500)">500</button>
-        <button onclick="setAmt('wdAmt',1500)">1500</button>
-        <button onclick="setAmt('wdAmt',2000)">2000</button>
-        <button onclick="setAmt('wdAmt',2500)">2500</button>
-        <button onclick="setAmt('wdAmt',3000)">3000</button>
       </div>
       <button class="btn-red" onclick="requestWithdraw()">ငွေထုတ် တောင်းမယ်</button>
       <div id="wdMsg" class="muted" style="margin-top:8px"></div>
@@ -1185,7 +1169,6 @@
     if(v < 0) v = 0;
     el.value = v;
   }
-  function setAmt(id, v){ document.getElementById(id).value = v; }
   function placeFb(kind){
     // မောင်း only — ဘော်ဒီ uses goConfirmBody() (per-pick amounts).
     var mode = 'maung';
