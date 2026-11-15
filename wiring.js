@@ -94,15 +94,29 @@
       return g.year + '-' + g.month + '-' + g.day + ' ' + h + ':' + g.minute + ':' + g.second + ap;
     } catch (e) { return String(iso || ''); }
   }
+  function normalizeKickoff(value) {
+    // Accepts a unix-seconds number or an ISO datetime string (PocketBase
+    // DateTime), returns unix seconds or null — same as the Admin app.
+    if (typeof value === 'number' && isFinite(value)) return Math.floor(value);
+    if (typeof value === 'string') {
+      var ms = Date.parse(value);
+      if (!isNaN(ms)) return Math.floor(ms / 1000);
+    }
+    return null;
+  }
+  M23.normalizeKickoff = normalizeKickoff;
+
   function dateTimeFromKickoff(kickoffUtc) {
     // Returns {date:'DD-MM-YY', time:'h:mm AM/PM'} in Asia/Yangon.
     try {
-      var dt = new Date(kickoffUtc);
+      var s = normalizeKickoff(kickoffUtc);
+      var dt = (s != null) ? new Date(s * 1000) : new Date(kickoffUtc);
       var d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', day: '2-digit', month: '2-digit', year: '2-digit' }).format(dt);
       var t = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Yangon', hour: 'numeric', minute: '2-digit', hour12: true }).format(dt);
       return { date: d.split('/').join('-'), time: t };
     } catch (e) { return { date: '', time: '' }; }
   }
+  M23.dateTimeFromKickoff = dateTimeFromKickoff;
   function reverse2d(n) { return n[1] + n[0]; }
 
   // Myanmar odds mirror — goal-total under only (mockup's mirrorOdds, verbatim).
@@ -271,8 +285,10 @@
       if (m.home_mm) M23.mmByEn[m.home] = m.home_mm;
       if (m.away_mm) M23.mmByEn[m.away] = m.away_mm;
     });
-    var mc = document.getElementById('maungCount'); if (mc) mc.textContent = String(mapped.length);
-    var bc = document.getElementById('bodyCount'); if (bc) bc.textContent = String(mapped.length);
+    // Counts show today's matches only (Pho Nov 15 — future matches hidden).
+    var todayN = (typeof todayMatches === 'function') ? todayMatches(mapped).length : mapped.length;
+    var mc = document.getElementById('maungCount'); if (mc) mc.textContent = String(todayN);
+    var bc = document.getElementById('bodyCount'); if (bc) bc.textContent = String(todayN);
     if (typeof renderMatches === 'function') {
       try { renderMatches('maungList', 'maung'); renderMatches('bodyList', 'body'); } catch (e) { /* lists not in DOM yet */ }
     }
