@@ -8,6 +8,10 @@
 // - Login on m23_players; balance is re-read from m23_players after every
 //   bet/request. The frontend never trusts a local balance.
 // - Sessions from m23_sessions (Admin-set open flag). 3D line = date only.
+// - 2D auto-schedule (Pho Nov 15): Mon-Fri only, am 10:00-close_at (default
+//   11:55), pm 14:00-close_at (default 15:55); Sat/Sun closed. Open times
+//   are fixed constants, NOT in Settings. The gate lives in
+//   nowSession()/is2dOpenNow() and never re-opens a manual Admin close.
 // - Limits/blocked from m23_settings (limit_2d/limit_3d/limit_fb,
 //   blocked_2d/blocked_3d). Limit numbers are NEVER displayed. Blocked =
 //   red, identical to over-limit red (no dark, no strikethrough, no label).
@@ -244,20 +248,171 @@
   }
   M23.refreshSettings = refreshSettings;
 
-  function pickSessions() {
+  // Re-fetch m23_sessions on the 30s auto-refresh, so a player who keeps the
+  // app open past 14:00 picks up the pm session without a reload (the pm
+  // session exists from the morning but only becomes current in the
+  // afternoon). Light: only sessions, not a full reload. A failed fetch
+  // keeps the old sessions. Optional `now` is for tests; live call sites
+  // pass nothing (real time).
+  async function refreshSessions(now) {
+    var sess = await safe(PB.listAll('m23_sessions', { sort: '-date', perPage: 200 }));
+    if (!sess) return;
+    M23.sessions = sess; M23.flags.sessions = true;
+    pickSessions(now);
+    applySession();
+  }
+  M23.refreshSessions = refreshSessions;
+
+  // --------------------------------------------- 2D auto-schedule (Pho Nov 15
+  // 18:31-18:47, settled): 2D opens Mon-Fri only, morning AND evening.
+  // Open times are FIXED constants (hardcoded, NOT in Settings): am 10:00,
+  // pm 14:00 (Yangon). Auto-close at the session's close_at (the Settings
+  // close times Pho sets in Admin; defaults am 11:55 / pm 15:55 when
+  // close_at is missing). Sat/Sun closed every week. A manual Admin close
+  // (session.open=false, e.g. holiday) is NEVER undone here — the gate only
+  // ever narrows the Admin flag, never widens it. Windows are [open, close):
+  // open AT 10:00/14:00, closed AT the close time. 3D and football untouched.
+  var SCHED_OPEN_AM_MIN = 10 * 60;  // 10:00 Yangon
+  var SCHED_OPEN_PM_MIN = 14 * 60;  // 14:00 Yangon
+  var SCHED_CLOSE_AM = '11:55';
+  var SCHED_CLOSE_PM = '15:55';
+
+  function yangonParts(now) {
+    // {ymd:'YYYY-MM-DD', weekday:0-6 (Sun=0), minutes:0-1439} in Asia/Yangon.
+    var d = (now instanceof Date) ? now : new Date(now == null ? Date.now() : now);
+    var out = { ymd: '', weekday: -1, minutes: -1 };
+    try { out.ymd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Yangon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d); } catch (e) { /* leave blank */ }
+    try {
+      var w = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Yangon', weekday: 'short' }).format(d);
+      var map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      out.weekday = (map[w] != null) ? map[w] : -1;
+    } catch (e) { /* leave -1 */ }
+    try {
+      var parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(d);
+      var h = 0, m = 0;
+      parts.forEach(function (p) { if (p.type === 'hour') h = parseInt(p.value, 10) || 0; if (p.type === 'minute') m = parseInt(p.value, 10) || 0; });
+      if (h === 24) h = 0; // some ICU builds render midnight as 24 with h23
+      out.minutes = h * 60 + m;
+    } catch (e) { /* leave -1 */ }
+    return out;
+  }
+  M23.yangonParts = yangonParts;
+
+  function isWeekdayYangon(now) {
+    var wd = yangonParts(now).weekday;
+    return wd >= 1 && wd <= 5; // Mon-Fri in Asia/Yangon
+  }
+  M23.isWeekdayYangon = isWeekdayYangon;
+
+  function hhmmToMinutes(hhmm) {
+    var p = String(hhmm || '').split(':');
+    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+  }
+  M23.hhmmToMinutes = hhmmToMinutes;
+
+  function yangonDateOf(value) {
+    // Yangon calendar date (YYYY-MM-DD) of a PocketBase DateTime value —
+    // same as the Admin app (logic.js v1.9). m23_sessions.date is stored as
+    // 00:00 Yangon in UTC ("2026-11-15 17:30:00.000Z" = 2026-11-16 Yangon),
+    // so the date part of the string is NOT the Yangon date: parse it.
+    var s = normalizeKickoff(value);
+    if (s == null) return null;
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Yangon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s * 1000)); } catch (e) { return null; }
+  }
+  M23.yangonDateOf = yangonDateOf;
+
+  function sessionCloseTime(session, period) {
+    // HH:MM from the session's close_at (PocketBase DateTime, Yangon wall
+    // time as Admin saved it: "2026-11-16 12:00:00" or its ISO form
+    // "2026-11-16T12:00:00.000Z"). Regex identical to the Admin app
+    // (logic.js closeTimeOf). Missing/unreadable -> period default.
+    var def = (period === 'pm') ? SCHED_CLOSE_PM : SCHED_CLOSE_AM;
+    var raw = session ? session.close_at : null;
+    if (raw) {
+      var m = String(raw).match(/(\d{2}):(\d{2})/);
+      if (m) {
+        var h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+        if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) return pad2(h) + ':' + pad2(mi);
+      }
+    }
+    return def;
+  }
+  M23.sessionCloseTime = sessionCloseTime;
+
+  function isInWindow(now, period, closeTime) {
+    var t = yangonParts(now).minutes;
+    if (t < 0) return false;
+    var close = hhmmToMinutes(closeTime || ((period === 'pm') ? SCHED_CLOSE_PM : SCHED_CLOSE_AM));
+    if (period === 'am') return t >= SCHED_OPEN_AM_MIN && t < close;
+    if (period === 'pm') return t >= SCHED_OPEN_PM_MIN && t < close;
+    return false;
+  }
+  M23.isInWindow = isInWindow;
+
+  function is2dOpenNow(session, now) {
+    if (!session || !session.open) return false; // Admin manual close wins
+    if (!isWeekdayYangon(now)) return false;     // Sat/Sun closed
+    // The picked session must be TODAY's (Yangon date). Without this, a
+    // stale latest session from a previous day (no session for today yet)
+    // would show open during window hours and bets would land in the wrong
+    // session. yangonDateOf parses the stored ISO date — the string prefix
+    // is the UTC day, not the Yangon day ("2026-11-15 17:30:00.000Z" is
+    // 2026-11-16 Yangon). An unreadable date fails closed (null != today).
+    if (yangonDateOf(session.date) !== yangonParts(now).ymd) return false;
+    return isInWindow(now, session.period, sessionCloseTime(session, session.period));
+  }
+  M23.is2dOpenNow = is2dOpenNow;
+
+  function sortSessionsLatest(rows) {
+    // The old pick order, unchanged: newest date first, open rows first on
+    // a date tie. Used by the 3D pick and as the 2D fallback.
+    return (rows || []).slice().sort(function (a, b) {
+      var d = String(b.date || '').localeCompare(String(a.date || ''));
+      if (d !== 0) return d;
+      return (b.open ? 1 : 0) - (a.open ? 1 : 0);
+    });
+  }
+
+  function pickSessionForNow(sessions, now) {
+    // Period-aware 2D pick: morning -> am session, afternoon -> pm session.
+    // One session for today -> that one. None for today -> fall back to the
+    // latest session overall (the clock/weekend gates show it closed).
+    var rows = (sessions || []).filter(function (r) { return r.game === '2d'; });
+    if (!rows.length) return null;
+    var today = yangonParts(now).ymd;
+    // Match by Yangon calendar date (Admin logic.js yangonDateOf) — the
+    // stored ISO date's string prefix is the UTC day, not the Yangon day.
+    var todays = rows.filter(function (r) { return yangonDateOf(r.date) === today; });
+    if (todays.length === 1) return todays[0];
+    if (todays.length > 1) {
+      var am = null, pm = null;
+      todays.forEach(function (r) {
+        if (r.period === 'am' && !am) am = r;
+        if (r.period === 'pm' && !pm) pm = r;
+      });
+      if (am && pm) {
+        // Before the am close time -> morning; otherwise -> evening. When
+        // the am session has no close time of its own, noon is the cut.
+        var cutoff = am.close_at ? sessionCloseTime(am, 'am') : '12:00';
+        return yangonParts(now).minutes < hhmmToMinutes(cutoff) ? am : pm;
+      }
+      return sortSessionsLatest(todays)[0];
+    }
+    return sortSessionsLatest(rows)[0];
+  }
+  M23.pickSessionForNow = pickSessionForNow;
+
+  function pickSessions(now) {
+    now = (now == null) ? new Date() : now;
     function pick(game) {
       var rows = M23.sessions.filter(function (r) { return r.game === game; });
       if (!rows.length) return null;
-      rows.sort(function (a, b) {
-        var d = String(b.date || '').localeCompare(String(a.date || ''));
-        if (d !== 0) return d;
-        return (b.open ? 1 : 0) - (a.open ? 1 : 0);
-      });
-      return rows[0];
+      return sortSessionsLatest(rows)[0];
     }
-    M23.session2d = pick('2d');
+    M23.session2d = pickSessionForNow(M23.sessions, now);
     M23.session3d = pick('3d');
   }
+  M23.pickSessions = pickSessions;
 
   // ---------------------------------------------------------------- fixtures
   function mapFixture(f) {
@@ -427,9 +582,10 @@
       refreshData();
       refreshFixtures();
       refreshSettings();
+      refreshSessions();
     }, 30000);
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && M23.player) { refreshData(); refreshFixtures(); refreshSettings(); }
+      if (!document.hidden && M23.player) { refreshData(); refreshFixtures(); refreshSettings(); refreshSessions(); }
     });
   }
 
@@ -534,9 +690,14 @@
   });
 
   // --- sessions ------------------------------------------------------------
-  window.nowSession = function () {
+  // 2D auto-schedule gate (Pho Nov 15): the effective open state is the
+  // Admin flag AND the clock (Mon-Fri, am 10:00-close / pm 14:00-close).
+  // Every UI surface and bet guard reads nowSession().open, so gating here
+  // covers all of them. The gate never re-opens a manual Admin close.
+  // Optional `now` is for tests; live call sites pass nothing (real time).
+  window.nowSession = function (now) {
     if (!M23.session2d) return { name: 'မနက်ပိုင်း', open: false };
-    return { name: periodName(M23.session2d.period, M23.session2d.label), open: !!M23.session2d.open };
+    return { name: periodName(M23.session2d.period, M23.session2d.label), open: is2dOpenNow(M23.session2d, now) };
   };
 
   window.applySession = function () {
@@ -554,7 +715,15 @@
       b3.className = 'badge ' + (o3 ? 'open' : 'closed');
     }
     var l3 = document.getElementById('sess3dLine');
-    if (l3 && M23.session3d) l3.textContent = fmtDateOnly(M23.session3d.date);
+    // 3D date is the Yangon calendar date (Pho Nov 15: 3D rounds are the
+    // 1st + 16th). The stored value is 00:00 Yangon as UTC ISO
+    // ("2026-11-15 17:30:00.000Z" = 2026-11-16 Yangon), so slicing the raw
+    // string shows the wrong day (15.11.2026). Use yangonDateOf; fall back
+    // to the old slice if the date is unreadable.
+    if (l3 && M23.session3d) {
+      var ymd3 = yangonDateOf(M23.session3d.date);
+      l3.textContent = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(M23.session3d.date);
+    }
   };
 
   // --- limits / blocked (red = at-limit OR blocked, identical) ------------
