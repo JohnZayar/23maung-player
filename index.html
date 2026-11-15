@@ -235,7 +235,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.2 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.3 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1041,11 +1041,43 @@
     var hh = h % 12; if (hh === 0) hh = 12;
     return hh + ':' + ('0' + mm).slice(-2) + ' ' + ap;
   }
+  // ဒီနေ့ပွဲပဲ ပြမယ် (Pho Nov 15 17:42): Player ဘောပွဲ စာရင်း (မောင်း/ဘော်ဒီ) မှာ
+  // ဒီနေ့ (Yangon ရက်စွဲ) ပွဲတွေပဲ ပေါ်မယ် — နောက်ရက် ပွဲတွေ ကြိုမပေါ်ဘူး။
+  // ဒေတာ (PocketBase) ကတော့ အတိုင်းပဲ ရှိနေတယ်၊ ပြတာပဲ စစ်တယ်။
+  function todayYangonDateStr(now){
+    try {
+      var d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', day: '2-digit', month: '2-digit', year: '2-digit' }).format(now || new Date());
+      return d.split('/').join('-');
+    } catch (e) { return ''; }
+  }
+  function kickoffYangonDateStr(kickoffUtc){
+    // kickoff (unix seconds OR ISO string) -> 'DD-MM-YY' in Asia/Yangon.
+    try {
+      var ms = (typeof kickoffUtc === 'number') ? kickoffUtc * 1000 : Date.parse(kickoffUtc);
+      if (isNaN(ms)) return '';
+      var d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', day: '2-digit', month: '2-digit', year: '2-digit' }).format(new Date(ms));
+      return d.split('/').join('-');
+    } catch (e) { return ''; }
+  }
+  function isTodayMatch(m, now){
+    if (!m) return false;
+    var today = todayYangonDateStr(now);
+    if (!today) return true; // ရက်စွဲ တွက်မရရင် ပြထား (fail-open)
+    if (m.date) return m.date === today;
+    if (m.kickoff_utc) return kickoffYangonDateStr(m.kickoff_utc) === today;
+    return false;
+  }
+  function todayMatches(list, now){
+    return (list || []).filter(function (m) { return isTodayMatch(m, now); });
+  }
   function renderMatches(listId, mode){
     var box = document.getElementById(listId);
     var html = '';
     var prevLeague = '';
+    var shown = 0;
     MATCHES.forEach(function(m, i){
+      if (!isTodayMatch(m)) return; // ဒီနေ့ပွဲပဲ (Pho Nov 15)
+      shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
       html += '<div class="match' + (closed ? ' closed' : '') + '"><div class="mhead"><span>★ ' + m.date + '</span><span>' + m.time + ' · ပိတ် ' + closeLabel(m) + (closed ? ' · ပိတ်ပြီ' : '') + '</span></div><div class="mbody">';
@@ -1059,7 +1091,11 @@
       html += '<button class="gcell" data-k="' + mode + ':' + i + ':under" onclick="toggleOdd(this)">ဂိုးအောက်</button>';
       html += '</div></div></div>';
     });
+    if (!shown) html = '<div class="hist-row"><span class="muted">ဒီနေ့ ပွဲမရှိပါ</span></div>';
     box.innerHTML = html;
+    var countId = (listId === 'maungList') ? 'maungCount' : (listId === 'bodyList' ? 'bodyCount' : null);
+    var ce = countId ? document.getElementById(countId) : null;
+    if (ce) ce.textContent = String(shown);
   }
   renderMatches('maungList', 'maung');
   renderMatches('bodyList', 'body');
@@ -1537,6 +1573,6 @@
   renderTotals();
   updatePreview2d();
 </script>
-<script src="wiring.js?v=2.1"></script>
+<script src="wiring.js?v=2.3"></script>
 </body>
 </html>
