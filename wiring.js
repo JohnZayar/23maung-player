@@ -209,6 +209,29 @@
     (M23.sessions || []).forEach(function (s) { if (s.id === sessionId) win = s.win_number; });
     return (win === null || win === undefined || String(win) === '') ? null : String(win);
   }
+  // Latest session of a game/period by date (same pick as the Admin app's
+  // latestSession). Used to show the winning numbers in the စာရင်း view.
+  function latestSessionBy(game, period) {
+    var rows = (M23.sessions || []).filter(function (r) { return r.game === game && (!period || r.period === period); });
+    if (!rows.length) return null;
+    rows.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    return rows[0];
+  }
+  M23.latestSessionBy = latestSessionBy;
+  // Winning numbers for the စာရင်း view: '2D မနက် 65 · 2D ညနေ 31 · 3D 654'
+  // (only the sessions whose result is known). '' when nothing is decided.
+  function winNumsText() {
+    var parts = [];
+    var w;
+    var am = latestSessionBy('2d', 'am');
+    var pm = latestSessionBy('2d', 'pm');
+    var r3 = latestSessionBy('3d', 'round');
+    if (am && (w = winNumberForSession(am.id))) parts.push('2D မနက် ' + w);
+    if (pm && (w = winNumberForSession(pm.id))) parts.push('2D ညနေ ' + w);
+    if (r3 && (w = winNumberForSession(r3.id))) parts.push('3D ' + w);
+    return parts.join(' · ');
+  }
+  M23.winNumsText = winNumsText;
   // 2D/3D voucher: decided when the session win_number is set; winIdx =
   // indexes of batch lines whose number equals it.
   function evalVoucher2d3d(batch, meta) {
@@ -473,6 +496,44 @@
     return isInWindow(now, session.period, sessionCloseTime(session, session.period));
   }
   M23.is2dOpenNow = is2dOpenNow;
+
+  function rawCloseTime(session) {
+    // HH:MM from the session's close_at, or null when missing/unreadable.
+    // Unlike sessionCloseTime (2D), there is NO default here: the App must
+    // never invent a close time. A null means manual-close-only.
+    var raw = session ? session.close_at : null;
+    if (!raw) return null;
+    var m = String(raw).match(/(\d{2}):(\d{2})/);
+    if (!m) return null;
+    var h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+    if (h < 0 || h > 23 || mi < 0 || mi > 59) return null;
+    return pad2(h) + ':' + pad2(mi);
+  }
+  M23.rawCloseTime = rawCloseTime;
+
+  function is3dOpenNow(session, now) {
+    // 3D clock gate (Pho Nov 16 17:48: the Settings close times MUST be
+    // enforced, each game on its own time). The 3D session is one round
+    // whose date is the draw date (Yangon); it stays open until the draw
+    // date, then closes at the Admin-set close_at time. Manual Admin close
+    // (open=false) always wins. Close is NEVER tied to the winning number
+    // (win_number is not read here). Missing/unreadable close_at means
+    // manual-close-only — the App never invents a time.
+    if (!session || !session.open) return false;
+    var drawYmd = yangonDateOf(session.date);
+    if (!drawYmd) return true; // unreadable date -> manual-close-only
+    var parts = yangonParts(now);
+    var today = parts.ymd;
+    if (!today) return true; // unreadable now -> manual-close-only
+    if (today < drawYmd) return true;  // before the draw date: open
+    if (today > drawYmd) return false; // after the draw date: closed
+    // Draw date: open until the Admin-set close time.
+    var close = rawCloseTime(session);
+    if (!close) return true; // no close time set -> manual-close-only
+    if (parts.minutes < 0) return false; // unreadable clock -> fail closed
+    return parts.minutes < hhmmToMinutes(close);
+  }
+  M23.is3dOpenNow = is3dOpenNow;
 
   function sortSessionsLatest(rows) {
     // The old pick order, unchanged: newest date first, open rows first on
@@ -821,7 +882,7 @@
     if (bet2) bet2.disabled = !s.open;
     var b3 = document.getElementById('badge3d');
     if (b3) {
-      var o3 = M23.session3d ? !!M23.session3d.open : true;
+      var o3 = M23.session3d ? is3dOpenNow(M23.session3d) : true;
       b3.textContent = o3 ? 'ဖွင့်နေတယ်' : 'ပိတ်ပြီ';
       b3.className = 'badge ' + (o3 ? 'open' : 'closed');
     }
@@ -830,10 +891,30 @@
     // 1st + 16th). The stored value is 00:00 Yangon as UTC ISO
     // ("2026-11-15 17:30:00.000Z" = 2026-11-16 Yangon), so slicing the raw
     // string shows the wrong day (15.11.2026). Use yangonDateOf; fall back
-    // to the old slice if the date is unreadable.
+    // to the old slice if the date is unreadable. The winning number is
+    // appended next to the date once decided (Pho Nov 16 17:48).
     if (l3 && M23.session3d) {
       var ymd3 = yangonDateOf(M23.session3d.date);
-      l3.textContent = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(M23.session3d.date);
+      var dateTxt = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(M23.session3d.date);
+      var win3 = winNumberForSession(M23.session3d.id);
+      l3.textContent = win3 ? (dateTxt + ' · ပေါက်ဂဏန်း ' + win3) : dateTxt;
+    }
+    // Winning numbers (Pho Nov 16 17:48: the Admin-entered winning numbers
+    // MUST show in the Player app, or the accounts cannot be shown).
+    // 2D: the current session's win_number, shown only once decided.
+    var w2 = document.getElementById('sess2dWinLine');
+    if (w2) {
+      var win2 = M23.session2d ? winNumberForSession(M23.session2d.id) : null;
+      w2.textContent = win2 ? ('ပေါက်ဂဏန်း ' + win2) : '';
+      w2.style.display = win2 ? '' : 'none';
+    }
+    // စာရင်း view: winning numbers for 2D am/pm + 3D (latest sessions).
+    var wnCard = document.getElementById('winNumsCard');
+    var wnLine = document.getElementById('winNumsLine');
+    if (wnCard && wnLine) {
+      var wn = winNumsText();
+      wnLine.textContent = wn ? ('ပေါက်ဂဏန်း: ' + wn) : '';
+      wnCard.style.display = wn ? '' : 'none';
     }
   };
 
@@ -1014,7 +1095,7 @@
 
   // --- 3D placement ----------------------------------------------------------
   window.confirmBet3d = async function () {
-    if (!M23.session3d || !M23.session3d.open) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if (!M23.session3d || !is3dOpenNow(M23.session3d)) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
     var total = 0;
     sel3d.forEach(function (n) { total += amt3dMap[n] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
