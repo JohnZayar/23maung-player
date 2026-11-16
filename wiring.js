@@ -29,8 +29,6 @@
 // - Top-up/withdraw = m23_requests rows (screenshot upload for top-up).
 //   No local wallet credit.
 // - Password change = PocketBase auth password update on m23_players.
-// - Notices = m23_notices (broadcasts + own). read_by is NOT updated:
-//   the schema locks m23_notices updates for players, so this is display-only.
 //
 // If PocketBase is unreachable or a collection does not exist yet, the
 // affected dataset keeps the mockup's sample data (display fallback) and
@@ -57,7 +55,6 @@
     bets3d: [],
     betsFb: [],
     walletTx: [],
-    notices: [],
     requests: [],
     mmByEn: {},
     blocked2d: [],
@@ -66,7 +63,7 @@
     min2d3d: 100,
     limitFb: 8000,
     loaded: false,
-    flags: { bets: false, tx: false, fixtures: false, finished: false, notices: false, sessions: false, settings: false },
+    flags: { bets: false, tx: false, fixtures: false, finished: false, sessions: false, settings: false },
     meta2d: [],         // parallel to placed['2d']: {voucher_no,status,win_amount,session}
     meta3d: [],
     metaFb: [],         // parallel to placed.fb: {voucher_no,status,payout,profit}
@@ -724,22 +721,19 @@
       safe(PB.getList('m23_bets_2d', { filter: pf, sort: 'voucher_no', perPage: 200 })),
       safe(PB.getList('m23_bets_3d', { filter: pf, sort: 'voucher_no', perPage: 200 })),
       safe(PB.getList('m23_bets_fb', { filter: pf, sort: 'voucher_no', perPage: 200 })),
-      safe(PB.getList('m23_wallet_tx', { filter: pf, sort: '-created', perPage: 200 })),
-      safe(PB.getList('m23_notices', { filter: pf + ' || player=null', sort: '-created', perPage: 100 }))
+      safe(PB.getList('m23_wallet_tx', { filter: pf, sort: '-created', perPage: 200 }))
     ]);
     if (results[0]) { M23.bets2d = results[0].items || []; }
     if (results[1]) { M23.bets3d = results[1].items || []; }
     if (results[2]) { M23.betsFb = results[2].items || []; }
     if (results[0] || results[1] || results[2]) M23.flags.bets = true;
     if (results[3]) { M23.walletTx = results[3].items || []; M23.flags.tx = true; }
-    if (results[4]) { M23.notices = results[4].items || []; M23.flags.notices = true; }
     rebuildPlaced();
     recomputeBetAlready();
     renderTotals();
     renderBallLog();
     renderResults();
     renderMoneyHist();
-    if (M23.flags.notices) renderNotices();
   }
   M23.refreshData = refreshData;
 
@@ -1411,21 +1405,6 @@
     // removed — wins are credited by settlement only (see WIRING.md).
   };
 
-  // --- notices -----------------------------------------------------------------
-  function renderNotices() {
-    if (!M23.flags.notices) return; // keep mockup samples until PB data loads
-    var card = document.querySelector('#scr-noti .card');
-    if (!card) return;
-    if (!M23.notices.length) {
-      card.innerHTML = '<div class="hist-row"><span class="muted">အသိပေးချက် မရှိပါ။</span></div>';
-      return;
-    }
-    card.innerHTML = M23.notices.map(function (n) {
-      return '<div class="hist-row"><span>' + esc(n.title || '') + (n.body ? ' — ' + esc(n.body) : '') + '</span><span class="muted">' + esc(fmtDateOnly(n.created)) + '</span></div>';
-    }).join('');
-  }
-  M23.renderNotices = renderNotices;
-
   // --- top-up / withdraw --------------------------------------------------------
   // FIX #6 (v1.7): in-flight guard — a double-tap on Submit used to send 2
   // top-up requests ("1 sent → 2 arrive"). While one is pending, further
@@ -1518,8 +1497,7 @@
       }
       _orig.go(id);
       if (!M23.loaded || !M23.player) return;
-      if (id === 'scr-noti') renderNotices();
-      else if (id === 'scr-maung' || id === 'scr-body') refreshFixtures();
+      if (id === 'scr-maung' || id === 'scr-body') refreshFixtures();
       else if (id === 'scr-vouch' || id === 'scr-log' || id === 'scr-money' || id === 'scr-results') {
         refreshData().catch(function () { /* keep current view on failure */ });
       }
