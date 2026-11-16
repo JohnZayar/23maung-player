@@ -153,6 +153,117 @@
   }
   M23.parlayPayout = parlayPayout;
 
+  // ------------------------------------------- voucher win/loss marks (Pho
+  // Nov 16, Player v2.5; DISPLAY ONLY — this never settles or pays anything).
+  // 2D/3D: a line wins when its number equals the session's win_number
+  // (set by Admin in the results screen). 1D: a pick wins when the finished
+  // fixture settles it as win/halfWin, using the same rule as Admin
+  // settleLeg (ported verbatim below; pyarFromLine/evalLine). A voucher
+  // shows ✅/❌ only once its result is fully known; before that it renders
+  // exactly as before (no mark, no highlight).
+  function pyarFromLine(line) { return Math.round((Math.abs(line) % 1) * 100); }
+  function evalLine(line, margin) {
+    var pyar = pyarFromLine(line);
+    var frac = Math.abs(line) % 1;
+    var isQuarter = Math.abs(frac - 0.25) < 1e-9 || Math.abs(frac - 0.75) < 1e-9;
+    function outcome(adj) { return adj > 0 ? 'win' : adj < 0 ? 'loss' : 'push'; }
+    if (!isQuarter) return { res: outcome(margin + line), pyar: pyar };
+    var o1 = outcome(margin + line - 0.25);
+    var o2 = outcome(margin + line + 0.25);
+    if (o1 === 'win' && o2 === 'win') return { res: 'win', pyar: pyar };
+    if (o1 === 'loss' && o2 === 'loss') return { res: 'loss', pyar: pyar };
+    if (o1 === 'push' && o2 === 'push') return { res: 'push', pyar: pyar };
+    if ((o1 === 'win' && o2 === 'push') || (o1 === 'push' && o2 === 'win')) return { res: 'halfWin', pyar: pyar };
+    if ((o1 === 'loss' && o2 === 'push') || (o1 === 'push' && o2 === 'loss')) return { res: 'halfLoss', pyar: pyar };
+    return { res: 'push', pyar: pyar };
+  }
+  // Evaluate one football leg against the finished fixtures. Returns
+  // {res, pyar} when the fixture is finished, else null (undecided).
+  function evalFbLeg(leg) {
+    var fx = null;
+    (M23.finished || []).forEach(function (m) { if (m.id === leg.fixture) fx = m; });
+    if (!fx || fx.status !== 'finished') return null;
+    var hg = fx.home_goals, ag = fx.away_goals;
+    if (hg == null || ag == null) return null;
+    if (leg.kind === 'body') {
+      var line = leg.ah_line;
+      if (line == null) return null;
+      if (leg.pick === 'h') return evalLine(line, hg - ag);
+      if (leg.pick === 'a') return evalLine(-line, ag - hg);
+      return null;
+    }
+    if (leg.kind === 'goal') {
+      var gl = leg.gl_line;
+      if (gl == null) return null;
+      var total = hg + ag;
+      if (leg.pick === 'over') return evalLine(-gl, total);
+      if (leg.pick === 'under') return evalLine(gl, -total);
+      return null;
+    }
+    return null;
+  }
+  // Winning number of a session (Admin saveWins writes win_number to the
+  // m23_sessions row); null when the result is not known yet.
+  function winNumberForSession(sessionId) {
+    var win = null;
+    (M23.sessions || []).forEach(function (s) { if (s.id === sessionId) win = s.win_number; });
+    return (win === null || win === undefined || String(win) === '') ? null : String(win);
+  }
+  // 2D/3D voucher: decided when the session win_number is set; winIdx =
+  // indexes of batch lines whose number equals it.
+  function evalVoucher2d3d(batch, meta) {
+    var win = meta ? winNumberForSession(meta.session) : null;
+    if (win === null) return { decided: false, won: false, winIdx: [] };
+    var idx = [];
+    (batch || []).forEach(function (p, i) { if (String(p.num) === win) idx.push(i); });
+    return { decided: true, won: idx.length > 0, winIdx: idx };
+  }
+  // 1D voucher: decided when every leg's fixture is finished. Body: a leg
+  // wins on res win/halfWin. Parlay: wins only as a whole — no leg lost
+  // and the parlay payout (same formula as settlement) beats the stake;
+  // when it wins, every leg row is highlighted (winIdx = all legs).
+  function evalVoucherFb(bet) {
+    var legs = (bet && bet.legs) || [];
+    if (!legs.length) return { decided: false, won: false, winIdx: [] };
+    var evaled = legs.map(function (lg) { return evalFbLeg(lg); });
+    for (var i = 0; i < evaled.length; i++) if (!evaled[i]) return { decided: false, won: false, winIdx: [] };
+    if (bet.type === 'body') {
+      var idx = [];
+      evaled.forEach(function (r, i) { if (r.res === 'win' || r.res === 'halfWin') idx.push(i); });
+      return { decided: true, won: idx.length > 0, winIdx: idx };
+    }
+    var withRes = legs.map(function (lg, i) { return { res: evaled[i].res, pyar: evaled[i].pyar }; });
+    if (parlayPayout(bet.stake || 0, withRes) > (bet.stake || 0)) {
+      return { decided: true, won: true, winIdx: legs.map(function (_, i) { return i; }) };
+    }
+    return { decided: true, won: false, winIdx: [] };
+  }
+  M23.evalFbLeg = evalFbLeg;
+  M23.evalVoucher2d3d = evalVoucher2d3d;
+  M23.evalVoucherFb = evalVoucherFb;
+  M23.winNumberForSession = winNumberForSession;
+  // ' ✅' / ' ❌' suffix for a voucher Total row; '' while undecided.
+  function voucherMark(ev) {
+    if (!ev || !ev.decided) return '';
+    return ev.won ? ' ✅' : ' ❌';
+  }
+  M23.voucherMark = voucherMark;
+  // One 2D/3D voucher (main tab + the 2D/3D screens' own lists share this).
+  function voucher2d3dHtml(batch, meta, i) {
+    var ev = evalVoucher2d3d(batch, meta || {});
+    var t = 0;
+    var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
+    rows += batch.map(function (p, j) {
+      t += p.amt;
+      var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
+      return '<div class="' + cls + '"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
+    }).join('');
+    rows += '<div class="vtot"><span>Total</span><span>' + fmt(t) + ' ကျပ်' + voucherMark(ev) + '</span></div>';
+    if (meta.win_amount > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.win_amount) + ' ကျပ်</b></div>';
+    return '<div class="vouch">' + rows + '</div>';
+  }
+  M23.voucher2d3dHtml = voucher2d3dHtml;
+
   function periodName(period, label) {
     if (period === 'am') return 'မနက်ပိုင်း';
     if (period === 'pm') return 'ညနေပိုင်း';
@@ -1057,33 +1168,29 @@
       if (vouchTab === '1d') {
         out = items.map(function (p, i) {
           var meta = metas[i] || {};
+          var bet = null;
+          (M23.betsFb || []).forEach(function (b) { if (String(b.voucher_no) === String(meta.voucher_no || (i + 1))) bet = b; });
+          var ev = bet ? evalVoucherFb(bet) : { decided: false, won: false, winIdx: [] };
           var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
           if (p.kind === 'ဘော်ဒီ') {
-            rows += p.picks.map(function (pk) {
-              return '<div class="vrow"><span>' + pk.label + '</span><span>' + fmt(pk.amt) + ' ကျပ်</span></div>';
+            rows += p.picks.map(function (pk, j) {
+              var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
+              return '<div class="' + cls + '"><span>' + pk.label + '</span><span>' + fmt(pk.amt) + ' ကျပ်</span></div>';
             }).join('');
           } else {
-            rows += p.picks.map(function (pk) {
-              return '<div class="vrow"><span>' + pk + '</span><span></span></div>';
+            rows += p.picks.map(function (pk, j) {
+              var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
+              return '<div class="' + cls + '"><span>' + pk + '</span><span></span></div>';
             }).join('');
-            if (p.kind === 'မောင်း') rows += '<div class="vrow" style="font-weight:bold"><span>' + p.picks.length + 'မောင်း</span><span>' + fmt(p.amt) + '</span></div>';
+            if (p.kind === 'မောင်း') rows += '<div class="' + (ev.won ? 'vrow vwin' : 'vrow') + '" style="font-weight:bold"><span>' + p.picks.length + 'မောင်း</span><span>' + fmt(p.amt) + '</span></div>';
           }
-          rows += '<div class="vtot"><span>Total</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
+          rows += '<div class="vtot"><span>Total</span><span>' + fmt(p.amt) + ' ကျပ်' + voucherMark(ev) + '</span></div>';
           if (meta.profit > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.profit) + ' ကျပ်</b></div>';
           return '<div class="vouch">' + rows + '</div>';
         }).join('');
       } else {
         out = items.map(function (batch, i) {
-          var meta = metas[i] || {};
-          var t = 0;
-          var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
-          rows += batch.map(function (p) {
-            t += p.amt;
-            return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
-          }).join('');
-          rows += '<div class="vtot"><span>Total</span><span>' + fmt(t) + ' ကျပ်</span></div>';
-          if (meta.win_amount > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.win_amount) + ' ကျပ်</b></div>';
-          return '<div class="vouch">' + rows + '</div>';
+          return voucher2d3dHtml(batch, metas[i] || {}, i);
         }).join('');
       }
       if (wrap) wrap.innerHTML = out;
@@ -1092,25 +1199,13 @@
     var v2 = document.getElementById('vouch2d');
     if (v2) {
       v2.innerHTML = placed['2d'].length ? placed['2d'].map(function (batch, i) {
-        var meta = M23.meta2d[i] || {};
-        var tb = 0;
-        var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
-        rows += batch.map(function (p) { tb += p.amt; return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>'; }).join('');
-        rows += '<div class="vtot"><span>Total</span><span>' + fmt(tb) + ' ကျပ်</span></div>';
-        if (meta.win_amount > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.win_amount) + ' ကျပ်</b></div>';
-        return '<div class="vouch">' + rows + '</div>';
+        return voucher2d3dHtml(batch, M23.meta2d[i] || {}, i);
       }).join('') : '';
     }
     var v3 = document.getElementById('vouch3d');
     if (v3) {
       v3.innerHTML = placed['3d'].length ? placed['3d'].map(function (batch, i) {
-        var meta = M23.meta3d[i] || {};
-        var tb = 0;
-        var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
-        rows += batch.map(function (p) { tb += p.amt; return '<div class="vrow"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>'; }).join('');
-        rows += '<div class="vtot"><span>Total</span><span>' + fmt(tb) + ' ကျပ်</span></div>';
-        if (meta.win_amount > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.win_amount) + ' ကျပ်</b></div>';
-        return '<div class="vouch">' + rows + '</div>';
+        return voucher2d3dHtml(batch, M23.meta3d[i] || {}, i);
       }).join('') : '';
     }
   };
