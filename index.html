@@ -236,7 +236,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.6 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.7 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -334,6 +334,7 @@
   <div class="screen" id="scr-2d">
     <div class="fb-top"><button class="btn-ghost" style="width:auto;padding:6px 12px" onclick="go('scr-home')">←</button><h3>2D</h3><span class="rate-badge">90ဆ</span><span class="badge open" id="badge2d">ဖွင့်နေတယ်</span><span class="fb-bal-amt">50,000</span></div>
     <div class="card">
+      <div class="muted" id="sess2dWinLine" style="margin:2px 0 8px;display:none"></div>
       <div class="grid2d" id="grid2d"></div>
       <!-- TEMP (Pho 23:10, test only): bet3 + pad hidden, restore by removing temp-hide -->
       <div class="bet3 temp-hide">
@@ -449,6 +450,7 @@
   <div class="screen" id="scr-log">
     <div class="card"><button class="menu-row" onclick="go('scr-vouch')"><span>ဘောက်ချာ</span><span>›</span></button></div>
     <div class="sect">ငွေစာရင်း</div>
+    <div class="card" id="winNumsCard" style="display:none"><div id="winNumsLine" style="font-size:15px"></div></div>
     <div class="card" style="padding:0;overflow:hidden">
       <div style="display:flex;border-bottom:1px solid #e2e8f0">
         <button class="ltab on" data-lt="ball" onclick="setLogTab('ball')">Ball</button>
@@ -1583,6 +1585,6 @@
   renderTotals();
   updatePreview2d();
 </script>
-<script src="wiring.js?v=2.6"></script>
+<script src="wiring.js?v=2.7"></script>
 </body>
 </html>
