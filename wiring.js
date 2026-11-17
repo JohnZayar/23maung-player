@@ -64,9 +64,12 @@
     limitFb: 8000,
     loaded: false,
     flags: { bets: false, tx: false, fixtures: false, finished: false, sessions: false, settings: false },
-    meta2d: [],         // parallel to placed['2d']: {voucher_no,status,win_amount,session}
+    meta2d: [],         // parallel to placed['2d']: {voucher_no,status,win_amount,session,created}
     meta3d: [],
-    metaFb: [],         // parallel to placed.fb: {voucher_no,status,payout,profit}
+    metaFb: [],         // parallel to placed.fb: {voucher_no,status,payout,profit,created}
+    vouchDate: null,    // voucher date picker (Pho Nov 17, Player v2.10): 'YYYY-MM-DD' Yangon; null until set
+    vouchDateInit: false, // true once the default date was computed from loaded data
+    vouchCalView: null, // calendar popup viewed month {y, m} (m 0-based)
     winBadgeByFixture: {} // fixture id -> '✅ အနိုင် X ကျပ်' (first winning leg of a settled bet)
   };
   window.M23 = M23;
@@ -283,6 +286,159 @@
     return '<div class="vouch">' + rows + '</div>';
   }
   M23.voucher2d3dHtml = voucher2d3dHtml;
+
+  // ------------------------------------------- voucher date picker (Pho
+  // Nov 17, Player v2.10; MOUNG556-style calendar popup). The voucher tab
+  // shows ALL of the player's vouchers across all days in one list, so a
+  // date picker in the top bar filters the current tab to one Yangon date.
+  // 2D/3D vouchers resolve their date from their session (M23.sessions);
+  // when the session cannot be resolved, the bet's `created` date is used.
+  // 1D (football) vouchers use the bet's `created` date. The picker is ONE
+  // shared state across the three tabs; the chosen date survives the 30s
+  // auto-refresh (only the first data load computes the default).
+  var CAL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function ymdAdd(ymd, days) {
+    var p = String(ymd || '').split('-');
+    if (p.length !== 3) return ymd;
+    var d = new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10) + days));
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+  M23.ymdAdd = ymdAdd;
+  // Yangon date (YYYY-MM-DD) of one voucher: session date for 2D/3D,
+  // bet `created` date for 1D and as the 2D/3D fallback. Null when neither
+  // resolves — such vouchers are shown, never hidden by the filter.
+  function voucherDateOf(meta, kind) {
+    if (!meta) return null;
+    if (kind !== '1d' && meta.session) {
+      var s = null;
+      (M23.sessions || []).forEach(function (r) { if (r.id === meta.session) s = r; });
+      if (s) { var d = yangonDateOf(s.date); if (d) return d; }
+    }
+    return meta.created ? yangonDateOf(meta.created) : null;
+  }
+  M23.voucherDateOf = voucherDateOf;
+  function vouchDatesAll() {
+    var out = [];
+    (M23.meta2d || []).forEach(function (m) { var d = voucherDateOf(m, '2d'); if (d) out.push(d); });
+    (M23.meta3d || []).forEach(function (m) { var d = voucherDateOf(m, '3d'); if (d) out.push(d); });
+    (M23.metaFb || []).forEach(function (m) { var d = voucherDateOf(m, '1d'); if (d) out.push(d); });
+    return out;
+  }
+  M23.vouchDatesAll = vouchDatesAll;
+  // Default: today (Yangon) when any voucher exists on that date, else the
+  // most recent date with vouchers, else today (no vouchers at all).
+  function defaultVouchDate(now) {
+    var today = yangonParts(now).ymd;
+    var dates = vouchDatesAll();
+    if (!dates.length) return today;
+    if (dates.indexOf(today) >= 0) return today;
+    dates.sort();
+    return dates[dates.length - 1];
+  }
+  M23.defaultVouchDate = defaultVouchDate;
+  function syncVouchDateText() {
+    var el = document.getElementById('vouchDateText');
+    if (el && M23.vouchDate) el.textContent = fmtDateOnly(M23.vouchDate);
+  }
+  M23.syncVouchDateText = syncVouchDateText;
+  function ensureVouchDate(now) {
+    if (M23.vouchDateInit) return;
+    M23.vouchDateInit = true;
+    M23.vouchDate = defaultVouchDate(now);
+    syncVouchDateText();
+  }
+  M23.ensureVouchDate = ensureVouchDate;
+  function setVouchDate(ymd) {
+    if (!ymd) return;
+    M23.vouchDate = ymd;
+    M23.vouchDateInit = true;
+    syncVouchDateText();
+    renderTotals();
+  }
+  M23.setVouchDate = setVouchDate;
+  // Calendar grid cells for month (y, m 0-based): leading blanks are null;
+  // each day is {d, ymd, we (Sat/Sun), future, today, sel}. Pure — the
+  // popup renderer below only turns these into HTML.
+  function calCells(y, m, todayYmd, selYmd) {
+    var first = new Date(Date.UTC(y, m, 1)).getUTCDay(); // 0 = Sunday
+    var dim = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    var cells = [];
+    for (var i = 0; i < first; i++) cells.push(null);
+    for (var d = 1; d <= dim; d++) {
+      var ymd = y + '-' + pad2(m + 1) + '-' + pad2(d);
+      var wd = new Date(Date.UTC(y, m, d)).getUTCDay();
+      cells.push({ d: d, ymd: ymd, we: (wd === 0 || wd === 6), future: !!(todayYmd && ymd > todayYmd), today: (ymd === todayYmd), sel: (ymd === selYmd) });
+    }
+    return cells;
+  }
+  M23.calCells = calCells;
+  function renderVouchCal() {
+    var card = document.getElementById('vouchCalCard');
+    if (!card) return;
+    var today = yangonParts().ymd;
+    var ty = parseInt(today.slice(0, 4), 10), tm = parseInt(today.slice(5, 7), 10) - 1;
+    var view = M23.vouchCalView || { y: ty, m: tm };
+    var isCur = (view.y === ty && view.m === tm);
+    var cells = calCells(view.y, view.m, today, M23.vouchDate);
+    var h = '<div class="vcal-nav">'
+      + '<button onclick="M23.vouchCalMove(-1)" aria-label="prev month">‹</button>'
+      + '<div class="vcal-title">' + CAL_MONTHS[view.m] + ' &nbsp; ' + view.y + '</div>'
+      + '<button onclick="M23.vouchCalMove(1)"' + (isCur ? ' disabled' : '') + ' aria-label="next month">›</button>'
+      + '</div>';
+    h += '<div class="vcal-grid">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(function (d) { return '<div class="vcal-dow">' + d + '</div>'; }).join('') + '</div>';
+    h += '<div class="vcal-grid">';
+    cells.forEach(function (c) {
+      if (!c) { h += '<div></div>'; return; }
+      var cls = 'vcal-day';
+      if (c.we) cls += ' cal-we';
+      if (c.future) cls += ' cal-future';
+      if (c.today) cls += ' cal-today';
+      if (c.sel && !c.today) cls += ' cal-sel';
+      if (c.future) h += '<div class="' + cls + '">' + c.d + '</div>';
+      else h += '<div class="' + cls + '" onclick="M23.vouchCalPick(\'' + c.ymd + '\')">' + c.d + '</div>';
+    });
+    h += '</div>';
+    h += '<div class="vcal-quick"><button onclick="M23.vouchCalQuick(\'yesterday\')">Yesterday</button><button onclick="M23.vouchCalQuick(\'today\')">Today</button></div>';
+    card.innerHTML = h;
+  }
+  M23.renderVouchCal = renderVouchCal;
+  function openVouchCal() {
+    ensureVouchDate();
+    var sel = M23.vouchDate || yangonParts().ymd;
+    M23.vouchCalView = { y: parseInt(sel.slice(0, 4), 10), m: parseInt(sel.slice(5, 7), 10) - 1 };
+    renderVouchCal();
+    var ov = document.getElementById('vouchCalOverlay');
+    if (ov) ov.style.display = 'flex';
+  }
+  M23.openVouchCal = openVouchCal;
+  function closeVouchCal() {
+    var ov = document.getElementById('vouchCalOverlay');
+    if (ov) ov.style.display = 'none';
+  }
+  M23.closeVouchCal = closeVouchCal;
+  function vouchCalMove(dir) {
+    var view = M23.vouchCalView || { y: parseInt(yangonParts().ymd.slice(0, 4), 10), m: parseInt(yangonParts().ymd.slice(5, 7), 10) - 1 };
+    var m = view.m + dir, y = view.y;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    // Never into a future month beyond the current month.
+    var today = yangonParts().ymd;
+    var ty = parseInt(today.slice(0, 4), 10), tm = parseInt(today.slice(5, 7), 10) - 1;
+    if (y > ty || (y === ty && m > tm)) return;
+    M23.vouchCalView = { y: y, m: m };
+    renderVouchCal();
+  }
+  M23.vouchCalMove = vouchCalMove;
+  function vouchCalPick(ymd) {
+    setVouchDate(ymd);
+    closeVouchCal();
+  }
+  M23.vouchCalPick = vouchCalPick;
+  function vouchCalQuick(which) {
+    var today = yangonParts().ymd;
+    vouchCalPick(which === 'yesterday' ? ymdAdd(today, -1) : today);
+  }
+  M23.vouchCalQuick = vouchCalQuick;
 
   function periodName(period, label) {
     if (period === 'am') return 'မနက်ပိုင်း';
@@ -685,10 +841,10 @@
       }
       return { kind: 'မောင်း', picks: legs.map(function (lg) { return buildFbLabel(lg); }), amt: r.stake || 0 };
     });
-    M23.meta2d = b2.map(function (r) { return { voucher_no: r.voucher_no, status: r.status, win_amount: r.win_amount || 0, session: r.session }; });
-    M23.meta3d = b3.map(function (r) { return { voucher_no: r.voucher_no, status: r.status, win_amount: r.win_amount || 0, session: r.session }; });
+    M23.meta2d = b2.map(function (r) { return { voucher_no: r.voucher_no, status: r.status, win_amount: r.win_amount || 0, session: r.session, created: r.created }; });
+    M23.meta3d = b3.map(function (r) { return { voucher_no: r.voucher_no, status: r.status, win_amount: r.win_amount || 0, session: r.session, created: r.created }; });
     M23.metaFb = bf.map(function (r) {
-      return { voucher_no: r.voucher_no, status: r.status, payout: r.payout || 0, profit: (r.profit != null ? r.profit : ((r.payout || 0) - (r.stake || 0))) };
+      return { voucher_no: r.voucher_no, status: r.status, payout: r.payout || 0, profit: (r.profit != null ? r.profit : ((r.payout || 0) - (r.stake || 0))), created: r.created };
     });
     // Win badges for the results screen: one badge per settled winning bet,
     // attached to its first winning leg's fixture.
@@ -1233,6 +1389,22 @@
     if (vouchTab === '2d') { items = placed['2d']; metas = M23.meta2d; }
     else if (vouchTab === '3d') { items = placed['3d']; metas = M23.meta3d; }
     else { items = placed.fb; metas = M23.metaFb; }
+    // Voucher date picker (Pho Nov 17, Player v2.10): filter the current
+    // tab to the selected Yangon date; other dates are hidden, not deleted.
+    // A voucher whose date cannot be resolved at all (no session, no
+    // created) is SHOWN, never hidden — only a known-different date hides
+    // a voucher. The 2D/3D screens' own lists (vouch2d / vouch3d below)
+    // are NOT filtered — out of scope.
+    ensureVouchDate();
+    if (M23.vouchDate) {
+      var kept = [];
+      items.forEach(function (it, i) {
+        var d = voucherDateOf(metas[i] || {}, vouchTab);
+        if (d === null || d === M23.vouchDate) kept.push(i);
+      });
+      items = kept.map(function (i) { return items[i]; });
+      metas = kept.map(function (i) { return metas[i]; });
+    }
     if (!items.length) {
       if (wrap) { wrap.style.display = 'none'; wrap.innerHTML = ''; }
       if (emptyBox) emptyBox.style.display = '';
@@ -1527,4 +1699,10 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initOnce);
     else initOnce();
   }
+
+  // Voucher date picker placeholder (Pho Nov 17, Player v2.10): today until
+  // the first data load computes the real default (today if vouchers exist
+  // today, else most recent voucher date).
+  M23.vouchDate = yangonParts().ymd;
+  syncVouchDateText();
 })();
