@@ -131,25 +131,45 @@
   }
   M23.mirrorOdds = mirrorOdds;
 
-  // Parlay payout (Pho Nov 12, settled): stake x product(leg factors) x
-  // (1 - commission). Full win x2, partial win x(1+pyar/100), partial loss
-  // x(1-pyar/100), push x1, full loss = 0. Commission from m23_settings
-  // (defaults 15/20/30). Display/settlement formula only — the frontend
-  // never credits winnings itself.
+  // Parlay payout — balanced table (Pho Nov 17, APPROVED): a little above
+  // the outside paper bookie's printed sheet, balanced across every draw
+  // cell. Same table as Admin logic.js, ported verbatim. The old formula
+  // (legs x2, then 15/20/30% commission) paid far above the sheet at high
+  // legs (8 legs: 179.2x vs sheet 100x). The table IS the net return
+  // multiplier (stake included); commission no longer applies to parlays.
+  // All-win by legs (sheet 4-8: 13/21/32/50/100, +~10%):
+  var PARLAY_ALLWIN = { 2: 3.5, 3: 7, 4: 14, 5: 23, 6: 35, 7: 55, 8: 110, 9: 200, 10: 350 };
+  // Draw rows, legs 4-8, draws 1-4 (sheet values x1.1, cleaned to .5 steps).
+  var PARLAY_DRAWS = {
+    4: { 1: 5.5, 2: 2.5, 3: 2, 4: 1 },
+    5: { 1: 11, 2: 4.5, 3: 3.5, 4: 1.1 },
+    6: { 1: 18, 2: 7, 3: 4.5, 4: 2.5 },
+    7: { 1: 33, 2: 13.5, 3: 8, 4: 8 },
+    8: { 1: 44, 2: 24.5, 3: 13.5, 4: 9 }
+  };
+  function parlayTableMult(nLegs, nDraws) {
+    var row = PARLAY_DRAWS[nLegs];
+    if (row && row[nDraws] !== undefined) return row[nDraws];
+    var base = PARLAY_ALLWIN[nLegs];
+    if (base === undefined) return 1;
+    return Math.max(1, base / Math.pow(2, nDraws));
+  }
+  M23.parlayTableMult = parlayTableMult;
+  // Display/settlement formula only — the frontend never credits winnings
+  // itself. Full win contributes x2 (scale 1), partial win x(1+pyar/100),
+  // partial loss x(1-pyar/100), push counts as a draw, full loss = 0.
   function parlayPayout(stake, legs) {
-    var mult = 1;
-    for (var i = 0; i < legs.length; i++) {
-      var lg = legs[i];
+    var ls = legs || [];
+    if (!ls.length) return 0;
+    var draws = 0, scale = 1;
+    for (var i = 0; i < ls.length; i++) {
+      var lg = ls[i];
       if (lg.res === 'loss') return 0;
-      if (lg.res === 'win') mult *= 2;
-      else if (lg.res === 'halfWin') mult *= (1 + lg.pyar / 100);
-      else if (lg.res === 'halfLoss') mult *= (1 - lg.pyar / 100);
+      if (lg.res === 'push') { draws++; continue; }
+      var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : 0;
+      scale *= f / 2;
     }
-    var s = M23.settings || {};
-    var comm = legs.length <= 3 ? (s.comm_23 != null ? s.comm_23 : 15)
-      : (legs.length <= 7 ? (s.comm_47 != null ? s.comm_47 : 20)
-      : (s.comm_810 != null ? s.comm_810 : 30));
-    return Math.round(stake * mult * (1 - comm / 100));
+    return Math.round(stake * parlayTableMult(ls.length, draws) * scale);
   }
   M23.parlayPayout = parlayPayout;
 
@@ -162,19 +182,43 @@
   // shows ✅/❌ only once its result is fully known; before that it renders
   // exactly as before (no mark, no highlight).
   function pyarFromLine(line) { return Math.round((Math.abs(line) % 1) * 100); }
+  // Pho Nov 17 (CORRECTED — "စျေးဖွင့်တဲ့ မိန်း ၁ဂိုး ၂ဂိုး ကိုတည်ရမှာပြီးမှ
+  // ပြားယူ"): the MAIN line (integer part) is the base; the pyar applies
+  // ONLY when the result lands exactly ON the main, IN THE LINE'S
+  // DIRECTION (line < 0 -> margin == +main; line > 0 -> margin == -main).
+  // A result that deviates from the main is a FULL win / FULL loss. The
+  // LINE SIGN decides who wins the pyar: line < 0 -> halfWin, line > 0 ->
+  // halfLoss. BODY legs only — goal legs use evalGoalLine below. Ported
+  // verbatim from Admin logic.js evalLine; DISPLAY ONLY.
   function evalLine(line, margin) {
     var pyar = pyarFromLine(line);
     var frac = Math.abs(line) % 1;
-    var isQuarter = Math.abs(frac - 0.25) < 1e-9 || Math.abs(frac - 0.75) < 1e-9;
-    function outcome(adj) { return adj > 0 ? 'win' : adj < 0 ? 'loss' : 'push'; }
-    if (!isQuarter) return { res: outcome(margin + line), pyar: pyar };
-    var o1 = outcome(margin + line - 0.25);
-    var o2 = outcome(margin + line + 0.25);
-    if (o1 === 'win' && o2 === 'win') return { res: 'win', pyar: pyar };
-    if (o1 === 'loss' && o2 === 'loss') return { res: 'loss', pyar: pyar };
-    if (o1 === 'push' && o2 === 'push') return { res: 'push', pyar: pyar };
-    if ((o1 === 'win' && o2 === 'push') || (o1 === 'push' && o2 === 'win')) return { res: 'halfWin', pyar: pyar };
-    if ((o1 === 'loss' && o2 === 'push') || (o1 === 'push' && o2 === 'loss')) return { res: 'halfLoss', pyar: pyar };
+    var main = Math.trunc(Math.abs(line));
+    var adj = margin + line;
+    if (frac > 0) {
+      var pyarMargin = line < 0 ? main : -main;
+      if (margin === pyarMargin) {
+        return { res: line < 0 ? 'halfWin' : 'halfLoss', pyar: pyar };
+      }
+    }
+    return { res: adj > 0 ? 'win' : adj < 0 ? 'loss' : 'push', pyar: pyar };
+  }
+  // Goal-total evaluation (Pho Nov 17, "3-45" example): "+" goal line ->
+  // OVER wins the pyar at the main; "-" goal line ("3 goals, 45 lose") ->
+  // OVER loses it, UNDER wins it. Away from the main, total vs |gl_line|
+  // decides. Ported verbatim from Admin logic.js evalGoalLine; DISPLAY ONLY.
+  function evalGoalLine(glLine, total, pick) {
+    var g = Math.abs(glLine);
+    var frac = g % 1;
+    var main = Math.trunc(g);
+    var pyar = Math.round(frac * 100);
+    if (frac > 0 && total === main) {
+      var overWinsPyar = glLine > 0;
+      var won = pick === 'over' ? overWinsPyar : !overWinsPyar;
+      return { res: won ? 'halfWin' : 'halfLoss', pyar: pyar };
+    }
+    if (total > g) return { res: pick === 'over' ? 'win' : 'loss', pyar: pyar };
+    if (total < g) return { res: pick === 'over' ? 'loss' : 'win', pyar: pyar };
     return { res: 'push', pyar: pyar };
   }
   // Evaluate one football leg against the finished fixtures. Returns
@@ -196,8 +240,8 @@
       var gl = leg.gl_line;
       if (gl == null) return null;
       var total = hg + ag;
-      if (leg.pick === 'over') return evalLine(-gl, total);
-      if (leg.pick === 'under') return evalLine(gl, -total);
+      if (leg.pick === 'over') return evalGoalLine(gl, total, 'over');
+      if (leg.pick === 'under') return evalGoalLine(gl, total, 'under');
       return null;
     }
     return null;
