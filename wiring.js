@@ -274,10 +274,13 @@
   // One 2D/3D voucher (main tab + the 2D/3D screens' own lists share this).
   // kind is '2d' | '3d': only 2D vouchers get a period line (Pho Nov 17,
   // Player v2.12) — 3D has one round per date, so no period line there.
-  function voucher2d3dHtml(batch, meta, i, kind) {
+  // dispNo (Player v2.13) is the per-session display number from
+  // voucherDisplayNos; when a caller does not pass one (direct calls in
+  // tests), the stored voucher_no is shown as before.
+  function voucher2d3dHtml(batch, meta, i, kind, dispNo) {
     var ev = evalVoucher2d3d(batch, meta || {});
     var t = 0;
-    var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
+    var rows = '<div class="vno">NO.' + (dispNo || meta.voucher_no || (i + 1)) + '</div>';
     if (kind === '2d') {
       var per = voucherPeriodOf(meta);
       if (per) rows += '<div class="vper">' + periodName(per) + '</div>';
@@ -339,6 +342,57 @@
     return null;
   }
   M23.voucherPeriodOf = voucherPeriodOf;
+  // Per-session voucher numbering (Pho Nov 17, Player v2.13): the
+  // displayed 'NO.N' restarts at 1 for every session — morning 2D
+  // vouchers are NO.1, NO.2…, evening 2D vouchers restart at NO.1,
+  // 3D restarts per round, 1D restarts per Yangon day. DISPLAY-ONLY:
+  // the stored voucher_no (a global per-player counter assigned in
+  // placeBetFlow) is untouched and stays the chronological sort key.
+  // Group key: the session id for 2D/3D when the session resolves;
+  // otherwise the voucher's date group (same fallback idea as
+  // voucherDateOf — a voucher whose session cannot be resolved falls
+  // back to its date; 1D always groups by its created Yangon date).
+  // A voucher is never hidden and no two vouchers share a number
+  // inside one group (positions are 1-based and unique by construction).
+  function voucherGroupKey(meta, kind) {
+    if (!meta) return 'd:unknown';
+    if (kind !== '1d' && meta.session) {
+      var found = false;
+      (M23.sessions || []).forEach(function (r) { if (r.id === meta.session) found = true; });
+      if (found) return 's:' + meta.session;
+    }
+    var d = voucherDateOf(meta, kind);
+    return 'd:' + (d || 'unknown');
+  }
+  M23.voucherGroupKey = voucherGroupKey;
+  // Display numbers for a meta list, aligned with the list order:
+  // each voucher's 1-based position inside its own group, ordered by
+  // stored voucher_no (then created) so the sequence is chronological
+  // even if the list arrives unsorted. The list a caller passes is a
+  // date-filtered one, and a whole session shares one date, so every
+  // group in the list is complete.
+  function voucherDisplayNos(metas, kind) {
+    var list = metas || [];
+    var order = list.map(function (m, idx) { return idx; });
+    order.sort(function (a, b) {
+      var na = (list[a] && list[a].voucher_no) || 0;
+      var nb = (list[b] && list[b].voucher_no) || 0;
+      if (na !== nb) return na - nb;
+      var ca = (list[a] && list[a].created) || '';
+      var cb = (list[b] && list[b].created) || '';
+      if (ca !== cb) return ca < cb ? -1 : 1;
+      return a - b;
+    });
+    var counts = {};
+    var out = [];
+    order.forEach(function (idx) {
+      var k = voucherGroupKey(list[idx], kind);
+      counts[k] = (counts[k] || 0) + 1;
+      out[idx] = counts[k];
+    });
+    return out;
+  }
+  M23.voucherDisplayNos = voucherDisplayNos;
   function vouchDatesAll() {
     var out = [];
     (M23.meta2d || []).forEach(function (m) { var d = voucherDateOf(m, '2d'); if (d) out.push(d); });
@@ -1486,6 +1540,10 @@
     // below) follow the SAME shared date.
     var vf = filterByVouchDate(items, metas, vouchTab);
     items = vf.items; metas = vf.metas;
+    // Per-session display numbers (Pho Nov 17, Player v2.13): NO.N
+    // restarts at 1 per session / per day — computed once for the
+    // filtered list, which holds every voucher of each shown group.
+    var dispNos = voucherDisplayNos(metas, vouchTab);
     if (!items.length) {
       if (wrap) { wrap.style.display = 'none'; wrap.innerHTML = ''; }
       if (emptyBox) emptyBox.style.display = '';
@@ -1499,7 +1557,7 @@
           var bet = null;
           (M23.betsFb || []).forEach(function (b) { if (String(b.voucher_no) === String(meta.voucher_no || (i + 1))) bet = b; });
           var ev = bet ? evalVoucherFb(bet) : { decided: false, won: false, winIdx: [] };
-          var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
+          var rows = '<div class="vno">NO.' + (dispNos[i] || meta.voucher_no || (i + 1)) + '</div>';
           if (p.kind === 'ဘော်ဒီ') {
             rows += p.picks.map(function (pk, j) {
               var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
@@ -1518,27 +1576,30 @@
         }).join('');
       } else {
         out = items.map(function (batch, i) {
-          return voucher2d3dHtml(batch, metas[i] || {}, i, vouchTab);
+          return voucher2d3dHtml(batch, metas[i] || {}, i, vouchTab, dispNos[i]);
         }).join('');
       }
       if (wrap) wrap.innerHTML = out;
     }
-    // 2D / 3D screens' own voucher lists (same records, NO.N from
-    // voucher_no) — filtered by the SAME shared date as the main voucher
-    // tab (Pho Nov 17, Player v2.11): today's list is empty when the
-    // player has no vouchers on the selected date.
+    // 2D / 3D screens' own voucher lists (same records, NO.N is the
+    // per-session display number, Player v2.13) — filtered by the SAME
+    // shared date as the main voucher tab (Pho Nov 17, Player v2.11):
+    // today's list is empty when the player has no vouchers on the
+    // selected date.
     var v2 = document.getElementById('vouch2d');
     if (v2) {
       var f2 = filterByVouchDate(placed['2d'], M23.meta2d, '2d');
+      var d2 = voucherDisplayNos(f2.metas, '2d');
       v2.innerHTML = f2.items.length ? f2.items.map(function (batch, i) {
-        return voucher2d3dHtml(batch, f2.metas[i] || {}, i, '2d');
+        return voucher2d3dHtml(batch, f2.metas[i] || {}, i, '2d', d2[i]);
       }).join('') : '';
     }
     var v3 = document.getElementById('vouch3d');
     if (v3) {
       var f3 = filterByVouchDate(placed['3d'], M23.meta3d, '3d');
+      var d3 = voucherDisplayNos(f3.metas, '3d');
       v3.innerHTML = f3.items.length ? f3.items.map(function (batch, i) {
-        return voucher2d3dHtml(batch, f3.metas[i] || {}, i, '3d');
+        return voucher2d3dHtml(batch, f3.metas[i] || {}, i, '3d', d3[i]);
       }).join('') : '';
     }
   };
