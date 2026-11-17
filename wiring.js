@@ -356,6 +356,22 @@
     renderTotals();
   }
   M23.setVouchDate = setVouchDate;
+  // Filter one voucher list to the SHARED selected date (Pho Nov 17,
+  // Player v2.11): the main voucher tab AND the 2D/3D screens' own lists
+  // (vouch2d / vouch3d) all follow the same M23.vouchDate. A voucher whose
+  // date cannot be resolved at all is SHOWN, never hidden — only a
+  // known-different date hides a voucher.
+  function filterByVouchDate(items, metas, kind) {
+    ensureVouchDate();
+    if (!M23.vouchDate) return { items: items, metas: metas };
+    var kept = [];
+    (items || []).forEach(function (it, i) {
+      var d = voucherDateOf((metas || [])[i] || {}, kind);
+      if (d === null || d === M23.vouchDate) kept.push(i);
+    });
+    return { items: kept.map(function (i) { return items[i]; }), metas: kept.map(function (i) { return metas[i]; }) };
+  }
+  M23.filterByVouchDate = filterByVouchDate;
   // Calendar grid cells for month (y, m 0-based): leading blanks are null;
   // each day is {d, ymd, we (Sat/Sun), future, today, sel}. Pure — the
   // popup renderer below only turns these into HTML.
@@ -687,6 +703,33 @@
     return parts.minutes < hhmmToMinutes(close);
   }
   M23.is3dOpenNow = is3dOpenNow;
+
+  // 3D session for the CURRENT round (Pho Nov 17, Player v2.11 option B —
+  // "ဟောင်းပွဲပဲ ဖျောက်၊ ကြိုထိုးလို့ရ"): the nearest round whose Yangon
+  // draw date is today or in the future. A round stays bettable from when
+  // its session exists until the draw (v2.7 gate: is3dOpenNow returns
+  // true before the draw date), so a future round (e.g. the Dec 1 round
+  // already in the data) counts and its screen shows it. A PAST round
+  // never counts — once the latest round is past and no future round
+  // exists, the 3D bet screen shows "ဒီနေ့ ပွဲမရှိပါ" like football
+  // instead of the old round. Today's draw wins over a future round on
+  // the draw day itself.
+  function session3dCurrent(now) {
+    var today = yangonParts(now).ymd;
+    if (!today) return null;
+    var rows = (M23.sessions || []).filter(function (r) {
+      var d = yangonDateOf(r.date);
+      return r.game === '3d' && d && d >= today;
+    });
+    if (!rows.length) return null;
+    rows.sort(function (a, b) {
+      var d = String(yangonDateOf(a.date)).localeCompare(String(yangonDateOf(b.date)));
+      if (d !== 0) return d;
+      return (b.open ? 1 : 0) - (a.open ? 1 : 0);
+    });
+    return rows[0];
+  }
+  M23.session3dCurrent = session3dCurrent;
 
   function sortSessionsLatest(rows) {
     // The old pick order, unchanged: newest date first, open rows first on
@@ -1030,9 +1073,15 @@
     if (b2) { b2.textContent = s.open ? 'ဖွင့်နေတယ်' : 'ပိတ်ပြီ'; b2.className = 'badge ' + (s.open ? 'open' : 'closed'); }
     var bet2 = document.getElementById('bet2d');
     if (bet2) bet2.disabled = !s.open;
+    // 3D badge + date line follow the CURRENT round (Pho Nov 17, Player
+    // v2.11 option B): the nearest round dated today or in the future.
+    // Only when the latest round is past (no current round) does the
+    // badge read closed and the screen show "ဒီနေ့ ပွဲမရှိပါ" instead of
+    // the old round.
+    var s3c = session3dCurrent();
     var b3 = document.getElementById('badge3d');
     if (b3) {
-      var o3 = M23.session3d ? is3dOpenNow(M23.session3d) : true;
+      var o3 = s3c ? is3dOpenNow(s3c) : false;
       b3.textContent = o3 ? 'ဖွင့်နေတယ်' : 'ပိတ်ပြီ';
       b3.className = 'badge ' + (o3 ? 'open' : 'closed');
     }
@@ -1043,12 +1092,26 @@
     // string shows the wrong day (15.11.2026). Use yangonDateOf; fall back
     // to the old slice if the date is unreadable. The winning number is
     // appended next to the date once decided (Pho Nov 16 17:48).
-    if (l3 && M23.session3d) {
-      var ymd3 = yangonDateOf(M23.session3d.date);
-      var dateTxt = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(M23.session3d.date);
-      var win3 = winNumberForSession(M23.session3d.id);
-      l3.textContent = win3 ? (dateTxt + ' · ပေါက်ဂဏန်း ' + win3) : dateTxt;
+    if (l3) {
+      if (s3c) {
+        var ymd3 = yangonDateOf(s3c.date);
+        var dateTxt = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(s3c.date);
+        var win3 = winNumberForSession(s3c.id);
+        l3.textContent = win3 ? (dateTxt + ' · ပေါက်ဂဏန်း ' + win3) : dateTxt;
+        l3.style.display = '';
+      } else {
+        l3.style.display = 'none';
+      }
     }
+    // 3D empty state: no current round -> hide the round's grid + bet bar
+    // and show the football-style "ဒီနေ့ ပွဲမရှိပါ". The winning number
+    // stays visible in စာရင်း (winNumsCard below) — untouched.
+    var no3 = document.getElementById('no3dToday');
+    if (no3) no3.style.display = s3c ? 'none' : '';
+    var card3 = document.querySelector('#scr-3d .card');
+    if (card3) card3.style.display = s3c ? '' : 'none';
+    var bar3 = document.querySelector('#scr-3d .betbar');
+    if (bar3) bar3.style.display = s3c ? '' : 'none';
     // Winning numbers (Pho Nov 16 17:48: the Admin-entered winning numbers
     // MUST show in the Player app, or the accounts cannot be shown).
     // 2D: the current session's win_number, shown only once decided.
@@ -1245,7 +1308,13 @@
 
   // --- 3D placement ----------------------------------------------------------
   window.confirmBet3d = async function () {
-    if (!M23.session3d || !is3dOpenNow(M23.session3d)) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    // 3D bets are possible on the current round from when its session
+    // exists until the draw (Pho Nov 17, Player v2.11 option B — v2.7
+    // gate kept): bettable before the draw date, on the draw day until
+    // the Admin-set close_at, closed after the draw date. A past round
+    // can never be bet on.
+    var s3 = session3dCurrent();
+    if (!s3 || !is3dOpenNow(s3)) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
     var total = 0;
     sel3d.forEach(function (n) { total += amt3dMap[n] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
@@ -1271,7 +1340,7 @@
     try {
       await placeBetFlow({
         collection: 'm23_bets_3d', kind: 'bet_3d', total: total, note: '3D ထိုး',
-        betBody: { player: M23.player.id, session: M23.session3d.id, lines: lines, total: total, status: 'placed' }
+        betBody: { player: M23.player.id, session: s3.id, lines: lines, total: total, status: 'placed' }
       });
       sel3d = [];
       amt3dMap = {};
@@ -1389,22 +1458,12 @@
     if (vouchTab === '2d') { items = placed['2d']; metas = M23.meta2d; }
     else if (vouchTab === '3d') { items = placed['3d']; metas = M23.meta3d; }
     else { items = placed.fb; metas = M23.metaFb; }
-    // Voucher date picker (Pho Nov 17, Player v2.10): filter the current
-    // tab to the selected Yangon date; other dates are hidden, not deleted.
-    // A voucher whose date cannot be resolved at all (no session, no
-    // created) is SHOWN, never hidden — only a known-different date hides
-    // a voucher. The 2D/3D screens' own lists (vouch2d / vouch3d below)
-    // are NOT filtered — out of scope.
-    ensureVouchDate();
-    if (M23.vouchDate) {
-      var kept = [];
-      items.forEach(function (it, i) {
-        var d = voucherDateOf(metas[i] || {}, vouchTab);
-        if (d === null || d === M23.vouchDate) kept.push(i);
-      });
-      items = kept.map(function (i) { return items[i]; });
-      metas = kept.map(function (i) { return metas[i]; });
-    }
+    // Voucher date picker (Pho Nov 17, Player v2.10 + v2.11): filter the
+    // current tab to the shared selected Yangon date; other dates are
+    // hidden, not deleted. The 2D/3D screens' own lists (vouch2d / vouch3d
+    // below) follow the SAME shared date.
+    var vf = filterByVouchDate(items, metas, vouchTab);
+    items = vf.items; metas = vf.metas;
     if (!items.length) {
       if (wrap) { wrap.style.display = 'none'; wrap.innerHTML = ''; }
       if (emptyBox) emptyBox.style.display = '';
@@ -1442,17 +1501,22 @@
       }
       if (wrap) wrap.innerHTML = out;
     }
-    // 2D / 3D screens' own voucher lists (same records, NO.N from voucher_no).
+    // 2D / 3D screens' own voucher lists (same records, NO.N from
+    // voucher_no) — filtered by the SAME shared date as the main voucher
+    // tab (Pho Nov 17, Player v2.11): today's list is empty when the
+    // player has no vouchers on the selected date.
     var v2 = document.getElementById('vouch2d');
     if (v2) {
-      v2.innerHTML = placed['2d'].length ? placed['2d'].map(function (batch, i) {
-        return voucher2d3dHtml(batch, M23.meta2d[i] || {}, i);
+      var f2 = filterByVouchDate(placed['2d'], M23.meta2d, '2d');
+      v2.innerHTML = f2.items.length ? f2.items.map(function (batch, i) {
+        return voucher2d3dHtml(batch, f2.metas[i] || {}, i);
       }).join('') : '';
     }
     var v3 = document.getElementById('vouch3d');
     if (v3) {
-      v3.innerHTML = placed['3d'].length ? placed['3d'].map(function (batch, i) {
-        return voucher2d3dHtml(batch, M23.meta3d[i] || {}, i);
+      var f3 = filterByVouchDate(placed['3d'], M23.meta3d, '3d');
+      v3.innerHTML = f3.items.length ? f3.items.map(function (batch, i) {
+        return voucher2d3dHtml(batch, f3.metas[i] || {}, i);
       }).join('') : '';
     }
   };
