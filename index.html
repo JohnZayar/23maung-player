@@ -113,6 +113,24 @@
   .vtab.on { color: #1e3a5f; border-bottom-color: #1e3a5f; font-weight: bold; }
   .vouch .vno { font-weight: bold; color: #0369a1; font-size: 15px; padding: 4px 0 2px; }
   .vouch .vtot { display: flex; justify-content: space-between; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; font-weight: bold; }
+  /* voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) */
+  .vcal-btn { display:flex;align-items:center;gap:6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;color:#1e293b;font-family:inherit;cursor:pointer;white-space:nowrap; }
+  .vcal-btn svg { width:18px;height:18px;flex:none; }
+  #vouchCalOverlay { position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:300;display:none;align-items:flex-start;justify-content:center;padding:28px 16px; }
+  .vcal-card { background:#fff;border-radius:16px;width:100%;max-width:340px;padding:18px 16px 16px;box-shadow:0 12px 32px rgba(15,23,42,.25); }
+  .vcal-nav { display:flex;align-items:center;justify-content:space-between;margin-bottom:6px; }
+  .vcal-nav button { background:none;border:none;font-size:24px;line-height:1;color:#334155;cursor:pointer;padding:2px 12px;font-family:inherit; }
+  .vcal-nav button:disabled { color:#cbd5e1;cursor:default; }
+  .vcal-title { font-size:19px;color:#475569;font-weight:500; }
+  .vcal-grid { display:grid;grid-template-columns:repeat(7,1fr);text-align:center; }
+  .vcal-dow { color:#b6bec9;font-size:15px;padding:8px 0; }
+  .vcal-day { width:40px;height:40px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:17px;color:#1e293b;cursor:pointer;border-radius:50%; }
+  .vcal-day.cal-we { color:#d92b2b; }
+  .vcal-day.cal-future { color:#cbd5e1;cursor:default; }
+  .vcal-day.cal-today { background:#d92b2b;color:#fff; }
+  .vcal-day.cal-sel { box-shadow:inset 0 0 0 2px #d92b2b; }
+  .vcal-quick { display:flex;gap:12px;margin-top:16px; }
+  .vcal-quick button { flex:1;background:#8a8f98;color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:17px;font-family:inherit;cursor:pointer; }
   /* ငွေစာရင်း Ball tab — Maung ပုံစံ (Pho Nov 12: Total + ✅/✖️) */
   .ltab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: 6px 4px; font-size: 15px; font-family: inherit; cursor: pointer; color: #64748b; }
   .ltab.on { color: #7c3aed; border-bottom-color: #7c3aed; font-weight: bold; }
@@ -235,7 +253,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.9 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.10 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -409,7 +427,7 @@
   </div>
 
   <div class="screen" id="scr-vouch">
-    <div class="card" style="margin-bottom:8px"><div class="row"><h3>ဘောက်ချာ</h3><button class="btn-red" style="width:auto;padding:6px 12px" onclick="go('scr-home')">← ပင်မ</button></div></div>
+    <div class="card" style="margin-bottom:8px"><div class="row"><h3>ဘောက်ချာ</h3><button class="vcal-btn" id="vouchCalBtn" onclick="M23.openVouchCal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2M14 18h2"/></svg><span id="vouchDateText"></span></button><button class="btn-red" style="width:auto;padding:6px 12px" onclick="go('scr-home')">← ပင်မ</button></div></div>
     <div class="card" style="margin-bottom:8px"><div style="display:flex;gap:8px">
       <button class="vtab on" data-vt="2d" onclick="setVouchTab('2d')">2D</button>
       <button class="vtab" data-vt="3d" onclick="setVouchTab('3d')">3D</button>
@@ -1572,6 +1590,8 @@
   renderTotals();
   updatePreview2d();
 </script>
-<script src="wiring.js?v=2.9"></script>
+  <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
+  <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
+<script src="wiring.js?v=2.10"></script>
 </body>
 </html>
