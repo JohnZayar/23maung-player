@@ -272,10 +272,16 @@
   }
   M23.voucherMark = voucherMark;
   // One 2D/3D voucher (main tab + the 2D/3D screens' own lists share this).
-  function voucher2d3dHtml(batch, meta, i) {
+  // kind is '2d' | '3d': only 2D vouchers get a period line (Pho Nov 17,
+  // Player v2.12) — 3D has one round per date, so no period line there.
+  function voucher2d3dHtml(batch, meta, i, kind) {
     var ev = evalVoucher2d3d(batch, meta || {});
     var t = 0;
     var rows = '<div class="vno">NO.' + (meta.voucher_no || (i + 1)) + '</div>';
+    if (kind === '2d') {
+      var per = voucherPeriodOf(meta);
+      if (per) rows += '<div class="vper">' + periodName(per) + '</div>';
+    }
     rows += batch.map(function (p, j) {
       t += p.amt;
       var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
@@ -317,6 +323,22 @@
     return meta.created ? yangonDateOf(meta.created) : null;
   }
   M23.voucherDateOf = voucherDateOf;
+  // Period ('am'/'pm') of one 2D voucher's session (Pho Nov 17, Player
+  // v2.12): a morning and an evening voucher on the same date are otherwise
+  // identical — the period line tells them apart. STRICT, same safety rule
+  // as the date: only 'am'/'pm' from the resolved session ever count;
+  // anything else (no session, session not found, period not am/pm)
+  // returns null and the voucher shows NO period line — never invented,
+  // and the voucher is never hidden.
+  function voucherPeriodOf(meta) {
+    if (!meta || !meta.session) return null;
+    var s = null;
+    (M23.sessions || []).forEach(function (r) { if (r.id === meta.session) s = r; });
+    if (!s) return null;
+    if (s.period === 'am' || s.period === 'pm') return s.period;
+    return null;
+  }
+  M23.voucherPeriodOf = voucherPeriodOf;
   function vouchDatesAll() {
     var out = [];
     (M23.meta2d || []).forEach(function (m) { var d = voucherDateOf(m, '2d'); if (d) out.push(d); });
@@ -1496,7 +1518,7 @@
         }).join('');
       } else {
         out = items.map(function (batch, i) {
-          return voucher2d3dHtml(batch, metas[i] || {}, i);
+          return voucher2d3dHtml(batch, metas[i] || {}, i, vouchTab);
         }).join('');
       }
       if (wrap) wrap.innerHTML = out;
@@ -1509,14 +1531,14 @@
     if (v2) {
       var f2 = filterByVouchDate(placed['2d'], M23.meta2d, '2d');
       v2.innerHTML = f2.items.length ? f2.items.map(function (batch, i) {
-        return voucher2d3dHtml(batch, f2.metas[i] || {}, i);
+        return voucher2d3dHtml(batch, f2.metas[i] || {}, i, '2d');
       }).join('') : '';
     }
     var v3 = document.getElementById('vouch3d');
     if (v3) {
       var f3 = filterByVouchDate(placed['3d'], M23.meta3d, '3d');
       v3.innerHTML = f3.items.length ? f3.items.map(function (batch, i) {
-        return voucher2d3dHtml(batch, f3.metas[i] || {}, i);
+        return voucher2d3dHtml(batch, f3.metas[i] || {}, i, '3d');
       }).join('') : '';
     }
   };
