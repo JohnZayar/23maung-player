@@ -271,6 +271,60 @@
     return ev.won ? ' ✅' : ' ❌';
   }
   M23.voucherMark = voucherMark;
+  // Football results slip (Pho Nov 17, Player v2.14; DISPLAY ONLY).
+  // The 1D voucher shows the slip layout in both states — when betting
+  // and after results; only the +/- (scores/ticks) is missing before
+  // results. Per leg: league + kickoff sub-line, the existing
+  // buildFbLabel line, and on the right the final score + tick once
+  // that leg is decided ('–' while undecided). The whole-voucher ✅/❌
+  // in the Total row still waits until every leg is decided (v2.5
+  // rule, unchanged).
+  function evalFbLegs(bet) {
+    var legs = (bet && bet.legs) || [];
+    return legs.map(function (lg) { return evalFbLeg(lg); });
+  }
+  M23.evalFbLegs = evalFbLegs;
+  // One leg of the slip: league + kickoff time from the joined fixture,
+  // score + tick from the leg's own evaluation. fx may be null (fixture
+  // not loaded — the 50-cap window in refreshFixtures) → '–', no tick.
+  function fbSlipLeg(leg, fx) {
+    var league = (fx && fx.league) || '';
+    var kickoffTime = (fx && fx.time) || '';
+    var score = '–';
+    if (fx && fx.status === 'finished' && fx.home_goals != null && fx.away_goals != null) {
+      score = fx.home_goals + ':' + fx.away_goals;
+    }
+    var tick = '';
+    var ev = leg ? evalFbLeg(leg) : null;
+    if (ev) {
+      if (ev.res === 'win' || ev.res === 'halfWin') tick = '✅';
+      else if (ev.res === 'loss' || ev.res === 'halfLoss') tick = '❌';
+      else if (ev.res === 'push') tick = '–';
+    }
+    return { league: league, kickoffTime: kickoffTime, score: score, tick: tick };
+  }
+  M23.fbSlipLeg = fbSlipLeg;
+  // Slip header line (v2.14): time · code · name · leg count · total
+  // stake. Skips any part that is unknown; the date stays in the tab
+  // top bar. The code is the player's short account name (email
+  // prefix, e.g. 23M002); the name is shown only when it differs.
+  function fbSlipHeader(p, meta) {
+    var parts = [];
+    var t = fmtDateTimeYangon(meta && meta.created);
+    if (t && t.indexOf(' ') >= 0) t = t.slice(t.indexOf(' ') + 1).replace(/:\d\d([ap]m)$/i, '$1');
+    if (t) parts.push('အချိန် ' + t);
+    var me = M23.player || {};
+    var code = '';
+    if (me.email && String(me.email).indexOf('@') >= 0) code = String(me.email).slice(0, String(me.email).indexOf('@'));
+    if (!code) code = me.name || '';
+    if (code) parts.push('ကုတ် ' + code);
+    if (me.name && me.name !== code) parts.push(me.name);
+    var n = (p && p.picks) ? p.picks.length : 0;
+    parts.push(n + ' ပွဲ');
+    parts.push('ငွေပေါင်း ' + fmt((p && p.amt) || 0) + ' ကျပ်');
+    return parts.join(' · ');
+  }
+  M23.fbSlipHeader = fbSlipHeader;
   // One 2D/3D voucher (main tab + the 2D/3D screens' own lists share this).
   // kind is '2d' | '3d': only 2D vouchers get a period line (Pho Nov 17,
   // Player v2.12) — 3D has one round per date, so no period line there.
@@ -1552,26 +1606,48 @@
       if (emptyBox) emptyBox.style.display = 'none';
       var out = '';
       if (vouchTab === '1d') {
+        // Slip fixtures (v2.14): finished first (scores), then scheduled
+        // (league + kickoff for legs not decided yet).
+        var fxById = {};
+        (M23.finished || []).forEach(function (f) { fxById[f.id] = f; });
+        (M23.fixtures || []).forEach(function (f) { if (!fxById[f.id]) fxById[f.id] = f; });
+        var slipSub = function (slip) {
+          if (!slip || (!slip.league && !slip.kickoffTime)) return '';
+          var bits = [];
+          if (slip.league) bits.push(slip.league);
+          if (slip.kickoffTime) bits.push(slip.kickoffTime);
+          return '<div class="vslip-league">' + esc(bits.join(' · ')) + '</div>';
+        };
         out = items.map(function (p, i) {
           var meta = metas[i] || {};
           var bet = null;
           (M23.betsFb || []).forEach(function (b) { if (String(b.voucher_no) === String(meta.voucher_no || (i + 1))) bet = b; });
           var ev = bet ? evalVoucherFb(bet) : { decided: false, won: false, winIdx: [] };
+          var legs = (bet && bet.legs) || [];
+          var slipOf = function (j) {
+            var lg = legs[j];
+            return lg ? fbSlipLeg(lg, fxById[lg.fixture]) : { league: '', kickoffTime: '', score: '–', tick: '' };
+          };
           var rows = '<div class="vno">NO.' + (dispNos[i] || meta.voucher_no || (i + 1)) + '</div>';
+          rows += '<div class="vslip-head">' + esc(fbSlipHeader(p, meta)) + '</div>';
           if (p.kind === 'ဘော်ဒီ') {
             rows += p.picks.map(function (pk, j) {
               var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
-              return '<div class="' + cls + '"><span>' + pk.label + '</span><span>' + fmt(pk.amt) + ' ကျပ်</span></div>';
+              var slip = slipOf(j);
+              var right = fmt(pk.amt) + ' ကျပ် · ' + slip.score + (slip.tick ? ' ' + slip.tick : '');
+              return slipSub(slip) + '<div class="' + cls + '"><span>' + pk.label + '</span><span>' + right + '</span></div>';
             }).join('');
           } else {
             rows += p.picks.map(function (pk, j) {
               var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
-              return '<div class="' + cls + '"><span>' + pk + '</span><span></span></div>';
+              var slip = slipOf(j);
+              var right = slip.score + (slip.tick ? ' ' + slip.tick : '');
+              return slipSub(slip) + '<div class="' + cls + '"><span>' + pk + '</span><span>' + right + '</span></div>';
             }).join('');
             if (p.kind === 'မောင်း') rows += '<div class="' + (ev.won ? 'vrow vwin' : 'vrow') + '" style="font-weight:bold"><span>' + p.picks.length + 'မောင်း</span><span>' + fmt(p.amt) + '</span></div>';
           }
           rows += '<div class="vtot"><span>Total</span><span>' + fmt(p.amt) + ' ကျပ်' + voucherMark(ev) + '</span></div>';
-          if (meta.profit > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.profit) + ' ကျပ်</b></div>';
+          if (ev.decided) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(Math.max(0, meta.profit || 0)) + ' ကျပ်</b></div>';
           return '<div class="vouch">' + rows + '</div>';
         }).join('');
       } else {
@@ -1662,13 +1738,15 @@
         var sel;
         if (l.kind === 'goal') sel = l.pick === 'over' ? 'ဂိုးပေါ်' : 'ဂိုးအောက်';
         else sel = (l.pick === 'h') ? hn + '.' + hh : an + '.' + aa;
-        return '<tr><td>' + game + '</td><td>' + score + '</td><td>' + sel + '</td><td>-</td></tr>';
+        // Same per-leg tick as the voucher slip (v2.14); '-' while undecided.
+        var tick = fbSlipLeg(l, f).tick || '-';
+        return '<tr><td>' + game + '</td><td>' + score + '</td><td>' + sel + '</td><td>' + tick + '</td></tr>';
       }).join('');
-      var mark = won ? '✅' : '✖️';
+      var mark = won ? '✅' : '❌';
       out += '<div class="ball-time"><span>' + esc(fmtDateTimeYangon(b.created)) + '</span><span>⌃</span></div>'
         + '<table class="ball-tbl"><tr><th>Game<br>' + kind + '</th><th>Result</th><th>Selected</th><th></th></tr>'
         + rows + '</table>'
-        + '<div class="ball-tot"><span>Total:</span><span>' + fmt(b.stake || 0) + ' <span class="mk">' + mark + '</span></span></div>';
+        + '<div class="ball-tot"><span>Total: ' + fmt(b.stake || 0) + ' <span class="mk">' + mark + '</span></span><span>အနိုင်ရငွေ ' + fmt(Math.max(0, profit)) + ' ကျပ်</span></div>';
     });
     el.innerHTML = out;
   };
