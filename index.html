@@ -256,7 +256,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.14 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.15 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1149,21 +1149,39 @@
     var btn = document.querySelector('button[data-k="' + k + '"]');
     if(btn) toggleOdd(btn);
   }
-  // မောင်း အဆ တွက်နည်း (Pho Nov 12, bet365 ပုံစံ + စာရွက် အကောက်):
-  // leg factor တွေ မြှောက်, ပြီးမှ အကောက် နှုတ် — full win ×2, partial win ×(1+pyar/100),
-  // partial loss ×(1−pyar/100), push ×1, full loss = မောင်း တစ်ခုလုံး ရှုံး (0).
-  // အကောက် (Pho Nov 12 21:42, အဆင့်ဆင့်): ၂–၃ ပွဲ 15%, ၄–၇ ပွဲ 20%, ၈–၁၀ ပွဲ 30%.
+  // မောင်း အဆ တွက်နည်း (Pho Nov 17, balanced table — စာရွက်ထက် ၁၀% ပို):
+  // ဇယား (အပြည့်အောင်): ၂ ပွဲ 3.5ဆ၊ ၃ ပွဲ 7ဆ၊ ၄ ပွဲ 14ဆ၊ ၅ ပွဲ 23ဆ၊ ၆ ပွဲ 35ဆ၊
+  // ၇ ပွဲ 55ဆ၊ ၈ ပွဲ 110ဆ၊ ၉ ပွဲ 200ဆ၊ ၁၀ ပွဲ 350ဆ။ သရေအတန်းတွေလည်း ဇယားအတိုင်း။
+  // partial win ×(1+pyar/100), partial loss ×(1−pyar/100) ကို ဇယားတန်ဖိုးနဲ့
+  // ချိန်ပြီး မြှောက် (full win နဲ့ နှိုင်းရင် တစ်ဝက်)၊ push = သရေအရေအတွက်၊
+  // full loss = မောင်း တစ်ခုလုံး ရှုံး (0)။ ကော်က် မရှိတော့ဘူး။
+  var PARLAY_ALLWIN = { 2: 3.5, 3: 7, 4: 14, 5: 23, 6: 35, 7: 55, 8: 110, 9: 200, 10: 350 };
+  var PARLAY_DRAWS = {
+    4: { 1: 5.5, 2: 2.5, 3: 2, 4: 1 },
+    5: { 1: 11, 2: 4.5, 3: 3.5, 4: 1.1 },
+    6: { 1: 18, 2: 7, 3: 4.5, 4: 2.5 },
+    7: { 1: 33, 2: 13.5, 3: 8, 4: 8 },
+    8: { 1: 44, 2: 24.5, 3: 13.5, 4: 9 }
+  };
+  function parlayTableMult(nLegs, nDraws){
+    var row = PARLAY_DRAWS[nLegs];
+    if (row && row[nDraws] !== undefined) return row[nDraws];
+    var base = PARLAY_ALLWIN[nLegs];
+    if (base === undefined) return 1;
+    return Math.max(1, base / Math.pow(2, nDraws));
+  }
   function parlayPayout(stake, legs){
-    var mult = 1;
-    for (var i = 0; i < legs.length; i++) {
-      var lg = legs[i];
+    var ls = legs || [];
+    if (!ls.length) return 0;
+    var draws = 0, scale = 1;
+    for (var i = 0; i < ls.length; i++) {
+      var lg = ls[i];
       if (lg.res === 'loss') return 0;
-      if (lg.res === 'win') mult *= 2;
-      else if (lg.res === 'halfWin') mult *= (1 + lg.pyar / 100);
-      else if (lg.res === 'halfLoss') mult *= (1 - lg.pyar / 100);
+      if (lg.res === 'push') { draws++; continue; }
+      var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : 0;
+      scale *= f / 2;
     }
-    var comm = legs.length <= 3 ? 0.15 : (legs.length <= 7 ? 0.20 : 0.30);
-    return Math.round(stake * mult * (1 - comm));
+    return Math.round(stake * parlayTableMult(ls.length, draws) * scale);
   }
   function toggleOdd(btn){
     var k = btn.dataset.k;
@@ -1596,6 +1614,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.14"></script>
+<script src="wiring.js?v=2.15"></script>
 </body>
 </html>
