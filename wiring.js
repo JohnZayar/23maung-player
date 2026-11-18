@@ -69,6 +69,8 @@
     metaFb: [],         // parallel to placed.fb: {voucher_no,status,payout,profit,created}
     vouchDate: null,    // voucher date picker (Pho Nov 17, Player v2.10): 'YYYY-MM-DD' Yangon; null until set
     vouchDateInit: false, // true once the default date was computed from loaded data
+    vouchDateManual: false, // true when the user picked the date by hand (calendar / Today / Yesterday)
+    vouchDateManualDay: null, // Yangon date the manual pick was made on (v2.16: a manual pick never carries to a new day)
     vouchCalView: null, // calendar popup viewed month {y, m} (m 0-based)
     winBadgeByFixture: {} // fixture id -> '✅ အနိုင် X ကျပ်' (first winning leg of a settled bet)
   };
@@ -499,15 +501,13 @@
     return out;
   }
   M23.vouchDatesAll = vouchDatesAll;
-  // Default: today (Yangon) when any voucher exists on that date, else the
-  // most recent date with vouchers, else today (no vouchers at all).
+  // Default: today (Yangon), ALWAYS (Pho Nov 18, Player v2.16). The old
+  // v2.10 fallback (most recent voucher date when none today) showed
+  // yesterday's date on a fresh morning — the date must auto-change to
+  // today. An empty list when nothing was bet today yet is correct;
+  // the calendar still reaches earlier dates.
   function defaultVouchDate(now) {
-    var today = yangonParts(now).ymd;
-    var dates = vouchDatesAll();
-    if (!dates.length) return today;
-    if (dates.indexOf(today) >= 0) return today;
-    dates.sort();
-    return dates[dates.length - 1];
+    return yangonParts(now).ymd;
   }
   M23.defaultVouchDate = defaultVouchDate;
   function syncVouchDateText() {
@@ -516,7 +516,14 @@
   }
   M23.syncVouchDateText = syncVouchDateText;
   function ensureVouchDate(now) {
-    if (M23.vouchDateInit) return;
+    // Auto (Pho Nov 18, Player v2.16): the date is today unless the user
+    // picked one by hand — and a hand pick survives re-renders only
+    // within the same Yangon day, never across days (the date must
+    // auto-change when the day changes, even if the app stayed open).
+    var today = yangonParts(now).ymd;
+    if (M23.vouchDateManual && M23.vouchDateManualDay === today) return;
+    M23.vouchDateManual = false;
+    M23.vouchDateManualDay = null;
     M23.vouchDateInit = true;
     M23.vouchDate = defaultVouchDate(now);
     syncVouchDateText();
@@ -526,22 +533,67 @@
     if (!ymd) return;
     M23.vouchDate = ymd;
     M23.vouchDateInit = true;
+    M23.vouchDateManual = true;
+    M23.vouchDateManualDay = yangonParts().ymd;
     syncVouchDateText();
     renderTotals();
   }
   M23.setVouchDate = setVouchDate;
+  // Current 2D session for the VOUCHER lists (Pho Nov 18, Player v2.16):
+  // same AM/PM pick as pickSessionForNow, but the AM -> PM switch happens
+  // at the PM OPEN time (14:00 Yangon), NOT at the AM close time —
+  // Pho's choice (Nov 18 10:50): morning vouchers stay visible until
+  // 14:00, then the evening session takes over. Before 14:00 -> today's
+  // am session; from 14:00 -> today's pm session. One session for today
+  // -> that one. None for today -> null (no session filter; the date
+  // filter alone applies).
+  function voucherSession2dCurrent(now) {
+    var today = yangonParts(now).ymd;
+    if (!today) return null;
+    var todays = (M23.sessions || []).filter(function (r) {
+      return r.game === '2d' && yangonDateOf(r.date) === today;
+    });
+    if (!todays.length) return null;
+    if (todays.length === 1) return todays[0];
+    var am = null, pm = null;
+    todays.forEach(function (r) {
+      if (r.period === 'am' && !am) am = r;
+      if (r.period === 'pm' && !pm) pm = r;
+    });
+    if (am && pm) return yangonParts(now).minutes < SCHED_OPEN_PM_MIN ? am : pm;
+    return sortSessionsLatest(todays)[0];
+  }
+  M23.voucherSession2dCurrent = voucherSession2dCurrent;
   // Filter one voucher list to the SHARED selected date (Pho Nov 17,
   // Player v2.11): the main voucher tab AND the 2D/3D screens' own lists
   // (vouch2d / vouch3d) all follow the same M23.vouchDate. A voucher whose
   // date cannot be resolved at all is SHOWN, never hidden — only a
   // known-different date hides a voucher.
-  function filterByVouchDate(items, metas, kind) {
-    ensureVouchDate();
+  function filterByVouchDate(items, metas, kind, now) {
+    ensureVouchDate(now);
     if (!M23.vouchDate) return { items: items, metas: metas };
+    // 2D session filter (Pho Nov 18, Player v2.16): when the picked date
+    // is today, show only the current session's vouchers — morning
+    // vouchers disappear once the evening session opens (14:00). A
+    // voucher whose session cannot be resolved is SHOWN, never hidden
+    // (same safety rule as the date). A picked past date shows the whole
+    // day (both sessions), as before. 3D and 1D are untouched.
+    var today = yangonParts(now).ymd;
+    var cur2d = null;
+    if (kind === '2d' && M23.vouchDate === today) cur2d = voucherSession2dCurrent(now);
     var kept = [];
     (items || []).forEach(function (it, i) {
       var d = voucherDateOf((metas || [])[i] || {}, kind);
-      if (d === null || d === M23.vouchDate) kept.push(i);
+      if (d !== null && d !== M23.vouchDate) return;
+      if (cur2d) {
+        var meta = (metas || [])[i] || {};
+        if (meta.session) {
+          var found = false;
+          (M23.sessions || []).forEach(function (r) { if (r.id === meta.session) found = true; });
+          if (found && meta.session !== cur2d.id) return;
+        }
+      }
+      kept.push(i);
     });
     return { items: kept.map(function (i) { return items[i]; }), metas: kept.map(function (i) { return metas[i]; }) };
   }
@@ -1632,10 +1684,11 @@
     if (vouchTab === '2d') { items = placed['2d']; metas = M23.meta2d; }
     else if (vouchTab === '3d') { items = placed['3d']; metas = M23.meta3d; }
     else { items = placed.fb; metas = M23.metaFb; }
-    // Voucher date picker (Pho Nov 17, Player v2.10 + v2.11): filter the
-    // current tab to the shared selected Yangon date; other dates are
-    // hidden, not deleted. The 2D/3D screens' own lists (vouch2d / vouch3d
-    // below) follow the SAME shared date.
+    // Voucher date picker (Pho Nov 17, Player v2.10 + v2.11; v2.16 adds
+    // the 2D session filter): filter the current tab to the shared
+    // selected Yangon date; other dates are hidden, not deleted. The
+    // 2D/3D screens' own lists (vouch2d / vouch3d below) follow the SAME
+    // shared date — and for 2D on today's date, only the current session.
     var vf = filterByVouchDate(items, metas, vouchTab);
     items = vf.items; metas = vf.metas;
     // Per-session display numbers (Pho Nov 17, Player v2.13): NO.N
@@ -1969,9 +2022,9 @@
     else initOnce();
   }
 
-  // Voucher date picker placeholder (Pho Nov 17, Player v2.10): today until
-  // the first data load computes the real default (today if vouchers exist
-  // today, else most recent voucher date).
+  // Voucher date picker placeholder (Pho Nov 17, Player v2.10; Nov 18
+  // v2.16: the default is today, always): today until the first data
+  // load computes the real default.
   M23.vouchDate = yangonParts().ymd;
   syncVouchDateText();
 })();
