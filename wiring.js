@@ -1360,7 +1360,8 @@
         var ymd3 = yangonDateOf(s3c.date);
         var dateTxt = ymd3 ? fmtDateOnly(ymd3) : fmtDateOnly(s3c.date);
         var win3 = winNumberForSession(s3c.id);
-        l3.textContent = win3 ? (dateTxt + ' · ပေါက်ဂဏန်း ' + win3) : dateTxt;
+        // v2.23 (Pho Nov 19): the winning number is green on this line.
+        l3.innerHTML = win3 ? (dateTxt + ' · ပေါက်ဂဏန်း <b style="color:#166534">' + win3 + '</b>') : dateTxt;
         l3.style.display = '';
       } else {
         l3.style.display = 'none';
@@ -1381,7 +1382,8 @@
     var w2 = document.getElementById('sess2dWinLine');
     if (w2) {
       var win2 = M23.session2d ? winNumberForSession(M23.session2d.id) : null;
-      w2.textContent = win2 ? ('ပေါက်ဂဏန်း ' + win2) : '';
+      // v2.23 (Pho Nov 19): the winning number is green on this line.
+      w2.innerHTML = win2 ? ('ပေါက်ဂဏန်း <b style="color:#166534">' + win2 + '</b>') : '';
       w2.style.display = win2 ? '' : 'none';
     }
     // စာရင်း view: winning numbers for 2D am/pm + 3D (latest sessions).
@@ -1393,6 +1395,10 @@
       wnLine.innerHTML = wn ? ('ပေါက်ဂဏန်း: ' + winNumsHtml()) : '';
       wnCard.style.display = wn ? '' : 'none';
     }
+    // v2.23 (Pho Nov 19): re-sync the bet grids so the winning number's
+    // button turns light green once the session is decided.
+    if (typeof syncGrid2d === 'function') { try { syncGrid2d(); } catch (e) { /* grid not built yet */ } }
+    if (typeof syncGrid3d === 'function') { try { syncGrid3d(); } catch (e) { /* grid not built yet */ } }
   };
 
   // --- limits / blocked (red = at-limit OR blocked, identical) ------------
