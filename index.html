@@ -82,10 +82,16 @@
   .grid2d .gn { font-size: 18px; font-weight: bold; line-height: 1.1; }
   .grid2d button.on { background: #16a34a; border-color: #16a34a; color: #fff; }
   .grid2d button.full { background: #d92b2b; border-color: #d92b2b; color: #fff; cursor: not-allowed; }
+  /* v2.23 (Pho Nov 19): the WINNING number — light green, distinct from
+     .on (selected, solid green) so it is never confused with a pick. */
+  .grid2d button.win { background: #dcfce7; border-color: #166534; color: #166534; }
   .grid3d { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 4px 0 8px; }
   .grid3d button { border: 1px solid #7e22ce; background: #ede9fe; border-radius: 8px; padding: 8px 0; font-size: 17px; font-weight: bold; font-family: inherit; cursor: pointer; color: #6b21a8; }
   .grid3d button.on { background: #7e22ce; border-color: #7e22ce; color: #fff; }
   .grid3d button.full { background: #d92b2b; border-color: #d92b2b; color: #fff; cursor: not-allowed; }
+  /* v2.23 (Pho Nov 19): the WINNING number — light green, distinct from
+     .on (selected, solid purple) so it is never confused with a pick. */
+  .grid3d button.win { background: #dcfce7; border-color: #166534; color: #166534; }
   .grid3d button.hide { display: none; }
   .digit3d { display: flex; gap: 6px; margin-bottom: 8px; }
   .digit3d select { flex: 1; background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 8px; padding: 10px 4px; font-size: 20px; font-weight: bold; font-family: inherit; color: #4c1d95; text-align: center; }
@@ -274,7 +280,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.22 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.23 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -768,12 +774,16 @@
     var g = document.getElementById('grid3d');
     if(!g) return;
     var perms = rOn3d ? rNums3d() : null;
+    // v2.23 (Pho Nov 19): the round's WINNING number is light green.
+    var win = null;
+    if (typeof M23 !== 'undefined' && M23.session3dCurrent) { var s3 = M23.session3dCurrent(); if (s3) win = M23.winNumberForSession(s3.id); }
     var kids = g.children;
     for(var i = 0; i < kids.length; i++){
       var num = kids[i].dataset.num;
       kids[i].classList.toggle('on', selHas3d(num));
       kids[i].classList.toggle('full', isFull3d(num));
       kids[i].classList.toggle('hide', !!(perms && perms.indexOf(num) === -1));
+      kids[i].classList.toggle('win', !!win && num === win);
     }
     var rb = document.getElementById('rBtn3d');
     if(rb) rb.classList.toggle('on', rOn3d);
@@ -891,10 +901,14 @@
   function syncGrid2d(){
     var g = document.getElementById('grid2d');
     var kids = g.children;
+    // v2.23 (Pho Nov 19): the session's WINNING number is light green.
+    // Read from M23 (wiring.js); null = undecided, no green anywhere.
+    var win = (typeof M23 !== 'undefined' && M23.session2d) ? M23.winNumberForSession(M23.session2d.id) : null;
     for(var i = 0; i < kids.length; i++){
       var num = kids[i].dataset.num;
       kids[i].classList.toggle('on', selHas(num));
       kids[i].classList.toggle('full', isFull2d(num));
+      kids[i].classList.toggle('win', !!win && num === win);
     }
   }
   function addTyped2d(){
@@ -1648,6 +1662,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.22"></script>
+<script src="wiring.js?v=2.23"></script>
 </body>
 </html>
