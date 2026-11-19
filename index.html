@@ -274,7 +274,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.20 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.21 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -460,12 +460,11 @@
   </div>
 
   <div class="screen" id="scr-vouch">
-    <div class="card" style="margin-bottom:8px"><div class="row"><h3>ဘောက်ချာ</h3><button class="vcal-btn" id="vouchCalBtn" onclick="M23.openVouchCal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2M14 18h2"/></svg><span id="vouchDateText"></span></button><button class="btn-red" style="width:auto;padding:6px 12px" onclick="go('scr-home')">← ပင်မ</button></div></div>
-    <div class="card" style="margin-bottom:8px"><div style="display:flex;gap:8px">
-      <button class="vtab on" data-vt="2d" onclick="setVouchTab('2d')">2D</button>
-      <button class="vtab" data-vt="3d" onclick="setVouchTab('3d')">3D</button>
-      <button class="vtab" data-vt="1d" onclick="setVouchTab('1d')">1D</button>
-    </div></div>
+    <!-- v2.21 (Pho Nov 19): the voucher header's 2 rows are merged into ONE
+         compact row — back + date + tabs. The "ဘောက်ချာ" title is dropped
+         (this IS the voucher screen); everything is smaller so the slips
+         below get the space. -->
+    <div class="card" style="margin-bottom:8px;padding:8px 10px"><div class="row" style="gap:6px"><button class="btn-red" style="width:auto;padding:6px 10px;font-size:15px" onclick="go('scr-home')">←</button><button class="vcal-btn" id="vouchCalBtn" style="padding:5px 8px;font-size:13px" onclick="M23.openVouchCal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2M14 18h2"/></svg><span id="vouchDateText"></span></button><div style="display:flex;gap:4px;flex:1"><button class="vtab on" data-vt="2d" onclick="setVouchTab('2d')">2D</button><button class="vtab" data-vt="3d" onclick="setVouchTab('3d')">3D</button><button class="vtab" data-vt="1d" onclick="setVouchTab('1d')">1D</button></div></div></div>
     <div class="card">
       <div id="liveVouchWrap"></div>
       <div id="vouchSample2d">
@@ -1649,6 +1648,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.20"></script>
+<script src="wiring.js?v=2.21"></script>
 </body>
 </html>
