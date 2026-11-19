@@ -1205,9 +1205,14 @@
   function updateUserDisplays() {
     var me = M23.player;
     if (!me) return;
+    // v2.17 (Pho Nov 19): the userbar stays hidden until a real login, so the
+    // login screen never shows the mockup name/balance.
+    document.querySelectorAll('.userbar').forEach(function (el) { el.style.display = ''; });
     document.querySelectorAll('.uname').forEach(function (el) { el.textContent = me.name || ''; });
-    var avs = document.querySelectorAll('.userbar .avatar');
-    avs.forEach(function (el) { el.textContent = (me.name || 'U').charAt(0); });
+    // v2.17 (Pho Nov 19): the userbar avatar ALWAYS stays the logo. The old
+    // code replaced it with the name's first letter on login — every player
+    // name starts with '2', so it showed a faint '2' on dark blue (looked
+    // like a plain blue circle) and flipped logo/blue between loads.
     document.querySelectorAll('.ribbon').forEach(function (el) { el.textContent = me.name || ''; });
     // Profile rows show the name twice (user code + name); keep the code row
     // untouched and update only the name row's <b>.
@@ -1250,6 +1255,8 @@
     } catch (e) {
       throw new Error('လက်ကျန်ငွေ ပြင်လို့ မရဘူး — admin ကို ဆက်သွယ်ပါ');
     }
+    // v2.17 (Pho Nov 19): dismiss the keyboard/cursor after a successful Save.
+    if (typeof document !== 'undefined' && document.activeElement) document.activeElement.blur();
     return bet;
   }
   M23.placeBetFlow = placeBetFlow;
@@ -1451,6 +1458,8 @@
     PB.clearAuth();
     M23.player = null;
     M23.loaded = false;
+    // v2.17 (Pho Nov 19): hide the userbar again on logout.
+    document.querySelectorAll('.userbar').forEach(function (el) { el.style.display = 'none'; });
     showLoginScreen();
   };
 
@@ -1588,7 +1597,7 @@
     var v = parseInt(amtInput ? amtInput.value : '', 10);
     if (!keys.length) { toast('ကြေး အရင် ရွေးပါ'); return; }
     if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if (v < (M23.minFb || 500)) { toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
+    if (v < (M23.minFb || 500)) { toast('ဘောပွဲ ' + fmt(M23.minFb || 500) + ' အောက် လောင်းမရ'); return; }
     if (v > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
     if (keys.length < 2) { toast('မောင်း အနည်းဆုံး ၂ ပွဲ ရွေးပါ'); return; }
     var maxLegs = (M23.settings && M23.settings.max_legs) || 10;
@@ -1632,7 +1641,7 @@
     var picks = keys.map(function (k) { return { key: k, label: fbSel.body[k], amt: amtBodyMap[k] || 0 }; })
       .filter(function (x) { return x.amt > 0; });
     if (!picks.length) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if (picks.some(function (x) { return x.amt < (M23.minFb || 500); })) { toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
+    if (picks.some(function (x) { return x.amt < (M23.minFb || 500); })) { toast('ဘောပွဲ ' + fmt(M23.minFb || 500) + ' အောက် လောင်းမရ'); return; }
     // Per-leg limit (schema): each leg's stake vs limit_fb.
     if (picks.some(function (x) { return x.amt > (M23.limitFb || 8000); })) { toast('လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
     var legs = [];
@@ -2022,9 +2031,26 @@
     else initOnce();
   }
 
+  // --- home banner slideshow (Pho Nov 19, Player v2.17): 3 photos, auto-rotate.
+  var homeSlideIdx = 0, homeSlideTimer = null;
+  window.homeSlide = function (i) {
+    var imgs = document.querySelectorAll('#homeBanner img');
+    var dots = document.querySelectorAll('#homeDots button');
+    if (!imgs.length) return;
+    homeSlideIdx = ((i % imgs.length) + imgs.length) % imgs.length;
+    imgs.forEach(function (im, j) { im.classList.toggle('on', j === homeSlideIdx); });
+    dots.forEach(function (d, j) { d.classList.toggle('on', j === homeSlideIdx); });
+  };
+  function startHomeSlideshow() {
+    if (homeSlideTimer || typeof document === 'undefined') return;
+    if (!document.querySelectorAll('#homeBanner img').length) return;
+    homeSlideTimer = setInterval(function () { window.homeSlide(homeSlideIdx + 1); }, 4000);
+  }
+
   // Voucher date picker placeholder (Pho Nov 17, Player v2.10; Nov 18
   // v2.16: the default is today, always): today until the first data
   // load computes the real default.
   M23.vouchDate = yangonParts().ymd;
   syncVouchDateText();
+  startHomeSlideshow();
 })();
