@@ -515,6 +515,20 @@
     if (el && M23.vouchDate) el.textContent = fmtDateOnly(M23.vouchDate);
   }
   M23.syncVouchDateText = syncVouchDateText;
+  // Ball log date (Pho Nov 19, Player v2.18): the Ball log shares the voucher
+  // date — Yesterday / Today buttons on the Ball section switch it.
+  function syncBallDateText() {
+    var el = document.getElementById('ballDateText');
+    if (el && M23.vouchDate) el.textContent = fmtDateOnly(M23.vouchDate);
+  }
+  M23.syncBallDateText = syncBallDateText;
+  window.setBallDate = function (off) {
+    // off 0 = today, -1 = yesterday (Yangon has no DST, so 24h steps are exact).
+    var t = new Date(Date.now() + (off || 0) * 86400000);
+    setVouchDate(yangonParts(t).ymd);
+    syncBallDateText();
+    renderBallLog();
+  };
   function ensureVouchDate(now) {
     // Auto (Pho Nov 18, Player v2.16): the date is today unless the user
     // picked one by hand — and a hand pick survives re-renders only
@@ -536,6 +550,7 @@
     M23.vouchDateManual = true;
     M23.vouchDateManualDay = yangonParts().ymd;
     syncVouchDateText();
+    syncBallDateText();
     renderTotals();
   }
   M23.setVouchDate = setVouchDate;
@@ -1823,9 +1838,23 @@
     if (!M23.flags.bets) { if (_orig.renderBallLog) _orig.renderBallLog(); return; }
     var el = document.getElementById('logBall');
     if (!el) return;
+    // Per-day (Pho Nov 19, Player v2.18): the Ball log shows ONE Yangon day
+    // only — the shared voucher date (Yesterday / Today) — never all days
+    // mixed. A bet whose date cannot be resolved is SHOWN, never hidden
+    // (same safety rule as the voucher lists).
+    ensureVouchDate();
+    syncBallDateText();
     var settled = M23.betsFb.filter(function (b) { return b.status && b.status !== 'open'; })
+      .filter(function (b) {
+        var d = b.created ? yangonDateOf(b.created) : null;
+        return d === null || d === M23.vouchDate;
+      })
       .slice().sort(function (a, b) { return String(b.created || '').localeCompare(String(a.created || '')); });
-    if (!settled.length) { el.innerHTML = '<div class="hist-row"><span class="muted">ပွဲပြီးတဲ့ ဘောပွဲ ထိုးကြေး မရှိသေးပါ</span></div>'; return; }
+    if (!settled.length) {
+      var anySettled = (M23.betsFb || []).some(function (b) { return b.status && b.status !== 'open'; });
+      el.innerHTML = '<div class="hist-row"><span class="muted">' + (anySettled ? 'ဒီရက် ပွဲပြီးတဲ့ ဘောပွဲ ထိုးကြေး မရှိသေးပါ' : 'ပွဲပြီးတဲ့ ဘောပွဲ ထိုးကြေး မရှိသေးပါ') + '</span></div>';
+      return;
+    }
     var fixById = {};
     M23.finished.forEach(function (f) { fixById[f.id] = f; });
     M23.fixtures.forEach(function (f) { if (!fixById[f.id]) fixById[f.id] = f; });
@@ -1899,6 +1928,7 @@
     document.querySelectorAll('.ltab').forEach(function (b) { b.classList.toggle('on', b.dataset.lt === t); });
     var show = function (id, on) { var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
     show('logBall', t === 'ball');
+    show('ballDateRow', t === 'ball');
     show('log2d', t === '2d');
     show('log3d', t === '3d');
     show('logMoney', t === 'money');
