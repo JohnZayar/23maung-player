@@ -266,18 +266,28 @@
   M23.latestSessionBy = latestSessionBy;
   // Winning numbers for the စာရင်း view: '2D မနက် 65 · 2D ညနေ 31 · 3D 654'
   // (only the sessions whose result is known). '' when nothing is decided.
-  function winNumsText() {
+  // winNumsText stays PLAIN text — its exact output is asserted by
+  // test-3d-close. winNumsHtml is the same parts with the numbers in green
+  // (Pho Nov 19, Player v2.22) for the "ပေါက်ဂဏန်း:" line.
+  function winNumsParts() {
     var parts = [];
     var w;
     var am = latestSessionBy('2d', 'am');
     var pm = latestSessionBy('2d', 'pm');
     var r3 = latestSessionBy('3d', 'round');
-    if (am && (w = winNumberForSession(am.id))) parts.push('2D မနက် ' + w);
-    if (pm && (w = winNumberForSession(pm.id))) parts.push('2D ညနေ ' + w);
-    if (r3 && (w = winNumberForSession(r3.id))) parts.push('3D ' + w);
-    return parts.join(' · ');
+    if (am && (w = winNumberForSession(am.id))) parts.push(['2D မနက်', w]);
+    if (pm && (w = winNumberForSession(pm.id))) parts.push(['2D ညနေ', w]);
+    if (r3 && (w = winNumberForSession(r3.id))) parts.push(['3D', w]);
+    return parts;
+  }
+  function winNumsText() {
+    return winNumsParts().map(function (p) { return p[0] + ' ' + p[1]; }).join(' · ');
   }
   M23.winNumsText = winNumsText;
+  function winNumsHtml() {
+    return winNumsParts().map(function (p) { return p[0] + ' <b style="color:#166534">' + p[1] + '</b>'; }).join(' · ');
+  }
+  M23.winNumsHtml = winNumsHtml;
   // 2D/3D voucher: decided when the session win_number is set; winIdx =
   // indexes of batch lines whose number equals it.
   function evalVoucher2d3d(batch, meta) {
@@ -387,8 +397,13 @@
     }
     rows += batch.map(function (p, j) {
       t += p.amt;
-      var cls = ev.winIdx.indexOf(j) >= 0 ? 'vrow vwin' : 'vrow';
-      return '<div class="' + cls + '"><span>' + p.num + '</span><span>' + fmt(p.amt) + ' ကျပ်</span></div>';
+      // v2.22 (Pho Nov 19): the winning NUMBER itself is green + bold — the
+      // pale row (vwin, since v2.18) was too faint to spot the hit at a
+      // glance. Only the number span is green; the amount stays plain.
+      var isWin = ev.winIdx.indexOf(j) >= 0;
+      var cls = isWin ? 'vrow vwin' : 'vrow';
+      var num = isWin ? '<span style="color:#166534;font-weight:bold">' + p.num + '</span>' : '<span>' + p.num + '</span>';
+      return '<div class="' + cls + '">' + num + '<span>' + fmt(p.amt) + ' ကျပ်</span></div>';
     }).join('');
     rows += '<div class="vtot"><span>Total</span><span>' + fmt(t) + ' ကျပ်' + voucherMark(ev) + '</span></div>';
     if (meta.win_amount > 0) rows += '<div class="vrow"><span>အနိုင်ရငွေ</span><b style="color:#166534">' + fmt(meta.win_amount) + ' ကျပ်</b></div>';
@@ -1374,7 +1389,8 @@
     var wnLine = document.getElementById('winNumsLine');
     if (wnCard && wnLine) {
       var wn = winNumsText();
-      wnLine.textContent = wn ? ('ပေါက်ဂဏန်း: ' + wn) : '';
+      // v2.22 (Pho Nov 19): the winning NUMBERS are green on this line.
+      wnLine.innerHTML = wn ? ('ပေါက်ဂဏန်း: ' + winNumsHtml()) : '';
       wnCard.style.display = wn ? '' : 'none';
     }
   };
