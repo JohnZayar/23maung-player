@@ -274,7 +274,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.19 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.20 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -498,8 +498,9 @@
 
   <!-- log -->
   <div class="screen" id="scr-log">
-    <div class="card"><button class="menu-row" onclick="go('scr-vouch')"><span>ဘောက်ချာ</span><span>›</span></button></div>
-    <div class="sect">ငွေစာရင်း</div>
+    <!-- v2.20 (Pho Nov 19): the big ဘောက်ချာ card is gone — records fill the
+         page; the voucher is just a small button beside the section title. -->
+    <div class="sect" style="display:flex;justify-content:space-between;align-items:center"><span>ငွေစာရင်း</span><button class="vcal-btn" onclick="go('scr-vouch')">ဘောက်ချာ ›</button></div>
     <div class="card" id="winNumsCard" style="display:none"><div id="winNumsLine" style="font-size:15px"></div></div>
     <div class="card" style="padding:0;overflow:hidden">
       <div style="display:flex;border-bottom:1px solid #e2e8f0">
@@ -1648,6 +1649,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.19"></script>
+<script src="wiring.js?v=2.20"></script>
 </body>
 </html>
