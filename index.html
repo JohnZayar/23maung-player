@@ -147,6 +147,13 @@
   .ball-tbl td { padding: 6px 4px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
   .ball-tot { display: flex; justify-content: space-between; padding: 8px 4px; font-size: 17px; }
   .ball-tot .mk { color: #16a34a; font-weight: bold; }
+  /* Ball date row (Player v2.19, Pho Nov 19 — single row): the layout MUST
+     live in this stylesheet rule, NOT as an inline style. setLogTab's show()
+     helper sets el.style.display='' when showing a tab, which strips an
+     inline display:flex and leaves the row stacked (buttons one under
+     another with empty space beside them, as on Pho's phone). A stylesheet
+     rule survives show() — the row stays one row on every tab switch. */
+  #ballDateRow { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
   .sect { font-size: 15px; font-weight: bold; color: #0e7490; margin: 16px 2px 8px; }
   .league { font-size: 12px; font-weight: bold; color: #334155; margin: 4px 2px 2px; }
   .res-league { font-size: 13px; font-weight: bold; color: #1d4ed8; margin: 10px 2px 4px; }
@@ -267,7 +274,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.18 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.19 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -501,7 +508,7 @@
         <button class="ltab" data-lt="3d" onclick="setLogTab('3d')">3D</button>
         <button class="ltab" data-lt="money" onclick="setLogTab('money')">ငွေစာရင်း</button>
       </div>
-      <div id="ballDateRow" style="display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0">
+      <div id="ballDateRow">
         <button class="vcal-btn" style="flex:1;justify-content:center" onclick="setBallDate(-1)">◀ မနေ့က</button>
         <span id="ballDateText" style="flex:1;text-align:center;font-weight:bold;color:#1e3a5f;font-size:14px"></span>
         <button class="vcal-btn" style="flex:1;justify-content:center" onclick="setBallDate(0)">ဒီနေ့ ▶</button>
@@ -1641,6 +1648,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.18"></script>
+<script src="wiring.js?v=2.19"></script>
 </body>
 </html>
