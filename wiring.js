@@ -2099,10 +2099,25 @@
     homeSlideTimer = setInterval(function () { window.homeSlide(homeSlideIdx + 1); }, 4000);
   }
 
+  // --- login banner slideshow (Pho Nov 20, Player v2.28): 4 posters, auto-rotate.
+  var loginSlideIdx = 0, loginSlideTimer = null;
+  window.loginSlide = function (i) {
+    var imgs = document.querySelectorAll('#loginBanner img');
+    if (!imgs.length) return;
+    loginSlideIdx = ((i % imgs.length) + imgs.length) % imgs.length;
+    imgs.forEach(function (im, j) { im.classList.toggle('on', j === loginSlideIdx); });
+  };
+  function startLoginSlideshow() {
+    if (loginSlideTimer || typeof document === 'undefined') return;
+    if (!document.querySelectorAll('#loginBanner img').length) return;
+    loginSlideTimer = setInterval(function () { window.loginSlide(loginSlideIdx + 1); }, 4000);
+  }
+
   // Voucher date picker placeholder (Pho Nov 17, Player v2.10; Nov 18
   // v2.16: the default is today, always): today until the first data
   // load computes the real default.
   M23.vouchDate = yangonParts().ymd;
   syncVouchDateText();
   startHomeSlideshow();
+  startLoginSlideshow();
 })();
