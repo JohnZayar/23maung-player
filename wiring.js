@@ -922,6 +922,22 @@
   }
   M23.is2dOpenNow = is2dOpenNow;
 
+  // --- 2D not-open message (Pho Nov 20, Player v2.30): 'ဒီပွဲ ပိတ်သွားပြီ' is
+  // WRONG before the open time — the morning session hasn't opened yet, it
+  // isn't closed. now < open time → 'ဒီပွဲ မဖွင့်သေးပါ'. Every other
+  // not-open state (manual Admin close, past close time, weekend, no
+  // session, stale session) keeps 'ဒီပွဲ ပိတ်သွားပြီ'.
+  function closedMsg2d(now) {
+    var s = M23.session2d;
+    if (s && s.open && isWeekdayYangon(now) && yangonDateOf(s.date) === yangonParts(now).ymd) {
+      var t = yangonParts(now).minutes;
+      var openMin = s.period === 'pm' ? SCHED_OPEN_PM_MIN : SCHED_OPEN_AM_MIN;
+      if (t >= 0 && t < openMin) return 'ဒီပွဲ မဖွင့်သေးပါ';
+    }
+    return 'ဒီပွဲ ပိတ်သွားပြီ';
+  }
+  M23.closedMsg2d = closedMsg2d;
+
   function rawCloseTime(session) {
     // HH:MM from the session's close_at, or null when missing/unreadable.
     // Unlike sessionCloseTime (2D), there is NO default here: the App must
@@ -1502,7 +1518,7 @@
 
   // --- 2D placement ----------------------------------------------------------
   window.confirmBet2d = async function () {
-    if (!M23.session2d || !nowSession().open) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if (!M23.session2d || !nowSession().open) { toast(closedMsg2d()); return; }
     var total = 0;
     sel2d.forEach(function (n) { total += amt2dMap[n] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
@@ -1542,7 +1558,7 @@
 
   // Old direct path (bet3/pad are temp-hidden in v3.83, but kept wired).
   window.placeBet2d = async function () {
-    if (!M23.session2d || !nowSession().open) { toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if (!M23.session2d || !nowSession().open) { toast(closedMsg2d()); return; }
     if (!sel2d.length) { toast('ဂဏန်း နှိပ်ပါ'); return; }
     var per = parseInt(inp2d.amt, 10) || 0;
     if (!per) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
