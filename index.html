@@ -287,7 +287,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.28 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.30 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -572,15 +572,17 @@
         <button class="vcal-btn" onclick="setTopupAmt(100000)">100,000</button>
       </div>
       <!-- v2.24 (Pho Nov 19): pay by QR, no phone number shown. The QR + open-app
-           button follow the KBPay/WavePay toggle (setPay switches them). -->
+           button follow the KBPay/WavePay toggle (setPay switches them).
+           v2.29 (Pho Nov 20): the QR image itself is HIDDEN on screen (display:none)
+           — the player gets it only via the 'ငွေသွင်း QR ရယူရန်' download link. -->
       <div style="text-align:center;margin:2px 0 10px">
-        <img id="payQrImg" src="qr-kbpay.jpg?v=2.24" alt="QR" style="width:200px;height:200px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-        <div class="muted" style="margin-top:6px">QR Scan ပြီး လွှဲပါ</div>
+        <img id="payQrImg" src="qr-kbpay.jpg?v=2.24" alt="QR" style="display:none;width:200px;height:200px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+        <div class="muted" style="display:none;margin-top:6px">QR Scan ပြီး လွှဲပါ</div>
         <button class="btn-ghost" style="width:100%;margin-top:8px" id="payOpenBtn" onclick="openPayApp()">KBPay ဖွင့်မယ်</button>
-        <a class="btn-ghost" id="payQrSave" href="qr-kbpay.jpg?v=2.24" download="qr-kbpay.jpg" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:8px">QR သိမ်းမယ်</a>
+        <a class="btn-ghost" id="payQrSave" href="qr-kbpay.jpg?v=2.24" download="qr-kbpay.jpg" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:8px">ငွေသွင်း QR ရယူရန်</a>
       </div>
       <!-- v2.25 (Pho Nov 20): 3 steps, so the player knows the order at a glance. -->
-      <div class="note" style="text-align:left">၁။ ငွေအမောက် ရွေးပါ<br>၂။ QR သိမ်းပြီး KBPay / WavePay ဖွင့် — Gallery ကနေ QR scan ဖတ်ပြီး လွှဲပါ<br>၃။ လွှဲပြီးရင် screenshot တင်ပြီး ပို့မယ် — admin အတည်ပြုရင် ပိုက်ဆံအိတ်ထဲ ရောက်မယ်။</div>
+      <div class="note" style="text-align:left">၁။ ငွေအမောက် ရွေးပါ<br>၂။ ငွေသွင်း QR ရယူရန် ကို နှိပ်ပြီး KBPay / WavePay ဖွင့် — Gallery ကနေ QR scan ဖတ်ပြီး လွှဲပါ<br>၃။ လွှဲပြီးရင် screenshot တင်ပြီး ပို့မယ် — admin အတည်ပြုရင် ပိုက်ဆံအိတ်ထဲ ရောက်မယ်။</div>
       <button class="btn-ghost" style="width:100%;margin-bottom:10px" onclick="document.getElementById('topupShot').click()">+ လွှဲပြီးကြောင်း screenshot တင်မယ်</button>
       <input type="file" id="topupShot" accept="image/*" style="display:none" onchange="document.getElementById('topupShotName').textContent=this.files[0]?('ရွေးပြီး: '+this.files[0].name):''">
       <div id="topupShotName" class="muted" style="margin-bottom:10px"></div>
@@ -1014,7 +1016,7 @@
     renderConfirm2d();
   }
   function confirmBet2d(){
-    if(!nowSession().open){ toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if(!nowSession().open){ toast(M23.closedMsg2d()); return; }
     var total = 0;
     sel2d.forEach(function(n){ total += amt2dMap[n] || 0; });
     if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
@@ -1076,7 +1078,7 @@
     syncGrid2d();
   }
   function placeBet2d(){
-    if(!nowSession().open){ toast('ဒီပွဲ ပိတ်သွားပြီ'); return; }
+    if(!nowSession().open){ toast(M23.closedMsg2d()); return; }
     if(!sel2d.length){ toast('ဂဏန်း နှိပ်ပါ'); return; }
     var per = parseInt(inp2d.amt, 10) || 0;
     if(!per){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
@@ -1717,6 +1719,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.28"></script>
+<script src="wiring.js?v=2.30"></script>
 </body>
 </html>
