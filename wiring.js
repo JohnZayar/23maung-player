@@ -71,8 +71,7 @@
     vouchDateInit: false, // true once the default date was computed from loaded data
     vouchDateManual: false, // true when the user picked the date by hand (calendar / Today / Yesterday)
     vouchDateManualDay: null, // Yangon date the manual pick was made on (v2.16: a manual pick never carries to a new day)
-    vouchCalView: null, // calendar popup viewed month {y, m} (m 0-based)
-    winBadgeByFixture: {} // fixture id -> '✅ အနိုင် X ကျပ်' (first winning leg of a settled bet)
+    vouchCalView: null // calendar popup viewed month {y, m} (m 0-based)
   };
   window.M23 = M23;
 
@@ -1161,21 +1160,6 @@
     M23.metaFb = bf.map(function (r) {
       return { voucher_no: r.voucher_no, status: r.status, payout: r.payout || 0, profit: (r.profit != null ? r.profit : ((r.payout || 0) - (r.stake || 0))), created: r.created };
     });
-    // Win badges for the results screen: one badge per settled winning bet,
-    // attached to its first winning leg's fixture.
-    M23.winBadgeByFixture = {};
-    bf.forEach(function (r) {
-      var profit = (r.profit != null ? r.profit : ((r.payout || 0) - (r.stake || 0)));
-      if (!profit || profit <= 0) return;
-      var legs = r.legs || [];
-      for (var i = 0; i < legs.length; i++) {
-        if (legs[i].res === 'win' || legs[i].res === 'halfWin') {
-          var fid = legs[i].fixture;
-          if (fid && !M23.winBadgeByFixture[fid]) M23.winBadgeByFixture[fid] = '✅ အနိုင် ' + fmt(profit) + ' ကျပ်';
-          break;
-        }
-      }
-    });
   }
   M23.rebuildPlaced = rebuildPlaced;
 
@@ -1859,8 +1843,6 @@
         var hn = n, an = n + 1; n++;
         html += '<div class="res-match"><div class="res-teams"><span class="rn">' + hn + '.</span><span class="tn">' + esc(teamMM(m.home)) + '</span><span class="res-score">' + m.home_goals + ' - ' + m.away_goals + '</span><span class="tn" style="text-align:right">' + esc(teamMM(m.away)) + '</span><span class="rn" style="text-align:right">' + an + '.</span></div>';
         html += '<div class="res-odds"><span class="ro">' + (m.hcpSide === 'h' ? esc(m.hcp) : '') + '</span><span class="gp">Gp' + esc(m.over) + '</span><span class="ro" style="text-align:right">' + (m.hcpSide === 'a' ? esc(m.hcp) : '') + '</span></div>';
-        var badge = M23.winBadgeByFixture[m.id];
-        if (badge) html += '<div class="res-win">' + esc(badge) + '</div>';
         html += '</div>';
       });
     });
