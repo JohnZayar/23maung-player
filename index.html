@@ -229,6 +229,8 @@
   .rate-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: bold; }
   .amt-cell { display: inline-flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; }
   .camt-input { width: 64px; font-size: 18px; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 2px; font-family: inherit; }
+  .over-limit { color: #d92b2b !important; border-color: #d92b2b !important; }
+  .limit-note { color: #d92b2b; font-size: 13px; font-weight: bold; margin-top: 6px; display: none; }
   .confirm-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; padding: 0; box-shadow: 0 -2px 10px rgba(0,0,0,.14); z-index: 9; display: flex; }
   .cb-trash { flex: 1; background: #e2e8f0; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
   .cb-ok { flex: 1; background: #1e3a5f; color: #fff; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
@@ -288,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.38 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.39 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -354,10 +356,11 @@
       <div class="fb-controls">
         <span class="fb-count" id="fbSelChip">0 မောင်း</span>
         <button class="fb-step" onclick="adjAmt('fbAmt',-500)">−</button>
-        <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ">
+        <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ" oninput="updateFbAmtLimit()">
         <button class="fb-step" onclick="adjAmt('fbAmt',500)">+</button>
         <button class="btn-red" onclick="placeFb('မောင်း')">ထိုးမည်</button>
       </div>
+      <div class="limit-note" id="fbLimitNote">လီမစ် ကျော်နေတယ်</div>
     </div>
     
   </div>
@@ -384,6 +387,7 @@
         <tbody id="confirmBodyBody"></tbody>
       </table>
       <div class="row" style="margin-top:12px"><span>Total:</span><b id="confirmBodyTotal">0</b></div>
+      <div class="limit-note" id="confirmBodyLimitNote">လီမစ် ကျော်နေတယ်</div>
     </div>
     <div class="confirm-bar">
       <button class="cb-trash" onclick="clearAmtBody()">🗑</button>
@@ -1379,6 +1383,18 @@
     v += d;
     if(v < 0) v = 0;
     el.value = v;
+    if (id === 'fbAmt') updateFbAmtLimit();
+  }
+  // Parlay stake red (Pho Nov 21, v2.39): fbAmt turns red when over the
+  // limit; the note shows, but the bet is never blocked.
+  function updateFbAmtLimit(){
+    var el = document.getElementById('fbAmt');
+    if (!el) return;
+    var v = parseInt(el.value, 10);
+    var over = !isNaN(v) && v > fbLimit();
+    el.classList.toggle('over-limit', over);
+    var note = document.getElementById('fbLimitNote');
+    if (note) note.style.display = over ? 'block' : 'none';
   }
   function placeFb(kind){
     // မောင်း only — ဘော်ဒီ uses goConfirmBody() (per-pick amounts).
@@ -1406,6 +1422,10 @@
   // ဘော်ဒီ အတည်ပြု (Pho Nov 11 19:28): ၁ပွဲကို ငွေ ၁ခု — each pick its own amount, Total = sum
   var amtBodyMap = {};
   var stepBody = 500; // football min bet 500 (Pho Nov 11 21:47 — 100 cannot be bet)
+  // Football limit (Pho Nov 21, v2.39): display-only — over-limit amounts
+  // show RED, never block the bet. Limit numbers are NEVER displayed
+  // (settled wiring.js header rule) — the note carries no number.
+  function fbLimit(){ return (typeof M23 !== 'undefined' && M23.limitFb) || 8000; }
   function goConfirmBody(){
     var keys = Object.keys(fbSel.body);
     if(!keys.length){ toast('ကြေး အရင် ရွေးပါ'); return; }
@@ -1422,15 +1442,22 @@
     var out = '';
     keys.forEach(function(k, i){
       var a = amtBodyMap[k] || 0;
-      out += '<tr><td>' + (i + 1) + '</td><td>' + stackLabel(fbSel.body[k]) + '</td><td><span class="amt-cell"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',-1)">−</button><input class="camt-input" id="camtBody-' + k + '" type="number" value="' + a + '" min="0" inputmode="numeric" onchange="setAmtBody(\'' + k + '\', this.value)"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',1)">+</button></span></td></tr>';
+      out += '<tr><td>' + (i + 1) + '</td><td>' + stackLabel(fbSel.body[k]) + '</td><td><span class="amt-cell"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',-1)">−</button><input class="camt-input' + (a > fbLimit() ? ' over-limit' : '') + '" id="camtBody-' + k + '" type="number" value="' + a + '" min="0" inputmode="numeric" onchange="setAmtBody(\'' + k + '\', this.value)"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',1)">+</button></span></td></tr>';
     });
     document.getElementById('confirmBodyBody').innerHTML = out;
     updateConfirmTotalBody();
   }
   function updateConfirmTotalBody(){
-    var t = 0;
-    Object.keys(amtBodyMap).forEach(function(k){ t += amtBodyMap[k] || 0; });
+    var t = 0, over = false;
+    Object.keys(amtBodyMap).forEach(function(k){
+      var a = amtBodyMap[k] || 0; t += a;
+      if (a > fbLimit()) over = true;
+      var el = document.getElementById('camtBody-' + k);
+      if (el) el.classList.toggle('over-limit', a > fbLimit());
+    });
     document.getElementById('confirmBodyTotal').textContent = fmt(t);
+    var note = document.getElementById('confirmBodyLimitNote');
+    if (note) note.style.display = over ? 'block' : 'none';
   }
   function setStepBody(v){ stepBody = parseInt(v, 10) || 500; }
   function adjAmtBody(k, dir){
@@ -1776,6 +1803,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.38"></script>
+<script src="wiring.js?v=2.39"></script>
 </body>
 </html>
