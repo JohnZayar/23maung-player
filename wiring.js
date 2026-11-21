@@ -1300,10 +1300,6 @@
     }
     // v2.17 (Pho Nov 19): dismiss the keyboard/cursor after a successful Save.
     if (typeof document !== 'undefined' && document.activeElement) document.activeElement.blur();
-    // v2.44 (Pho Nov 21 — cursor): after a successful Save, Pho is done with
-    // this amount — clear lastAmtFocus so the focus guard (index.html) does
-    // not restore the cursor, and go()'s navigation restore stays quiet.
-    if (typeof lastAmtFocus !== 'undefined') { lastAmtFocus = null; }
     return bet;
   }
   M23.placeBetFlow = placeBetFlow;
