@@ -289,7 +289,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.35 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.36 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1145,31 +1145,41 @@
     var hh = h % 12; if (hh === 0) hh = 12;
     return hh + ':' + ('0' + mm).slice(-2) + ' ' + ap;
   }
-// ဒီနေ့ပွဲပဲ ပြမယ် (Pho Nov 15 17:42) + ညနက်ပွဲ (Pho Nov 20 18:51) +
-  // ဒီနေ့ပွဲ နေ့လည် ၂ နာရီ ဂိတ် (Pho Nov 21 07:29 — MOUNG556 မှန်၊
-  // ငါတို့မှား: ဂိတ်က ဒီနေ့ပွဲပေါ်မှာ ရှိရမယ်၊ မနက်ဖြန်ပွဲပေါ်မှာ မဟုတ်ဘူး):
-  // Player ဘောပွဲ စာရင်း (မောင်း/ဘော်ဒီ) မှာ
-  // (1) ဒီနေ့ပွဲ — မနက် 6 နာရီမတိုင်ခင် ကန်မယ့်ပွဲ (မနေ့ည ညနက်ပွဲ) က
-  // တစ်နေ့လုံး ပြမယ်၊ နေ့လယ်ပွဲ (6 နာရီအထက်၊ အချိန်မသိရတဲ့ ပွဲအပါအဝင်) က
-  // နေ့လည် ၂ နာရီ (14:00 Yangon) ကျော်မှသာ ပြမယ်။
-  // (2) မနက်ဖြန်ပွဲ — မနက် 6 နာရီမတိုင်ခင် ကန်မယ့်ပွဲ (ဒီညညနက်ပွဲ) သာ
-  // တစ်နေ့လုံး ပြမယ်၊ နေ့လယ်ပွဲက မနက်ဖြန်ရောက်မှ 14:00 ကျော်မှ ပေါ်မယ်။
-  // (3) သန်ဘက်ခါနဲ့ နောက်ရက်ပွဲတွေ ဘယ်တော့မှ ကြိုမပေါ်ဘူး (v2.33 ရဲ့
-  // သန်ဘက်ခါ ညနက်ပွဲ အမြီးကို ဖြုတ်လိုက်တယ် — အဲ့အမြီးက မနက်ဖြန်ည
-  // ညနက်ပွဲရဲ့ အမြီး မဟုတ်ဘဲ မှားနေတဲ့ နေ့ကြိုပြမှုပဲ)။
-  // ဒေတာ (PocketBase) ကတော့ အတိုင်းပဲ ရှိနေတယ်၊ ပြတာပဲ စစ်တယ်။
+// ပွဲစဉ် ပြတန်း — session window (Pho Nov 21 08:18, Player v2.36 — v2.35 ရဲ့
+  // ဒီနေ့ပွဲ 14:00 ဂိတ်က လွန်သွားတယ်: ဒီနေ့ပွဲတွေ မနက်ကတည်းက ပျောက်ပြီး
+  // မနက်ဖြန်မနက်ပိုင်း ပွဲတွေ စောစောပေါ်နေတယ်; MOUNG556 မှန်၊ ငါတို့မှား):
+  // session တစ်ခု = [D 14:00 → D+1 10:00] (Yangon)။ ပွဲတစ်ပွဲဟာ သူ့ kickoff
+  // (Yangon နာရီ hk, ရက်စွဲ Dk) အရ session တစ်ခုထဲ ပါတယ် —
+  // (1) hk >= 14 → session Dk (ညနေပွဲက သူ့ရက်ရဲ့ session ထဲ)။
+  // (2) hk < 10 → session Dk-1 (မိုးလင်း 06:30/07:00 Nassar တို့လို မနက်ပိုင်း
+  // ပွဲတွေ — မနေ့ 14:00 ကတည်းက ပေါ်တယ်)။
+  // (3) hk <= 10 → session Dk-1 (10:00 အထိ tail — 10:00 sharp လည်း မနေ့
+  // session ထဲ ပါမယ်; မဟုတ်ရင် 10:00 ပွဲ ထိုးလို့မရဘူး)။ 10 < hk < 14 →
+  // session Dk-1 (gap ပွဲ — ထိုးလို့ရအောင် မနေ့ session ထဲ ထည့်တယ်;
+  // top-5 လိဒ်မှာ မရှိသလောက်ပဲ)။
+  // (4) အချိန်မသိ/ဖတ်မရတဲ့ ပွဲ (date-only, garbage kickoff_utc) → m.date ကို
+  // session ရက်အဖြစ် သုံးတယ် (fail-closed — အဲ့ရက်ရဲ့ session မှာပဲ ပေါ်မယ်၊
+  // စောပြီး ကြိုမပေါ်ဘူး)။
+  // အခု အချိန်က ပွဲရဲ့ session window [D 14:00, D+1 10:00] ထဲမှာ ရှိမှ
+  // ပြမယ်။ session ကြား 10:00–14:00 မှာ စာရင်း လွတ်တယ် (အဲ့အချိန်
+  // ကန်မယ့်ပွဲ မရှိဘူး)။ ဒေတာ (PocketBase) ကတော့ အတိုင်းပဲ ရှိနေတယ်၊
+  // ပြတာပဲ စစ်တယ်။
   function todayYangonDateStr(now){
     try {
       var d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', day: '2-digit', month: '2-digit', year: '2-digit' }).format(now || new Date());
       return d.split('/').join('-');
     } catch (e) { return ''; }
   }
-  function tomorrowYangonDateStr(now){
+  function yangonDatePlus(ds, n){
+    // 'DD-MM-YY' +/- n days -> 'DD-MM-YY' ('' when unparseable).
     try {
-      var base = now || new Date();
-      var t = new Date(new Date(base).getTime() + 86400000); // Yangon has no DST
-      var d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', day: '2-digit', month: '2-digit', year: '2-digit' }).format(t);
-      return d.split('/').join('-');
+      var p = (ds || '').split('-');
+      if (p.length !== 3) return '';
+      var d = new Date(Date.UTC(2000 + Number(p[2]), Number(p[1]) - 1, Number(p[0]) + n));
+      var dd = ('0' + d.getUTCDate()).slice(-2);
+      var mm = ('0' + (d.getUTCMonth() + 1)).slice(-2);
+      var yy = ('0' + (d.getUTCFullYear() % 100)).slice(-2);
+      return dd + '-' + mm + '-' + yy;
     } catch (e) { return ''; }
   }
   function kickoffYangonDateStr(kickoffUtc){
@@ -1195,28 +1205,26 @@
       return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Yangon', hour: '2-digit', hourCycle: 'h23' }).format(now || new Date()));
     } catch (e) { return -1; }
   }
+  function sessionDateOf(m){
+    // ပွဲရဲ့ session ရက် ('DD-MM-YY') — kickoff (Yangon) အရ။
+    var kd = '', kh = -1;
+    if (m.kickoff_utc) { kd = kickoffYangonDateStr(m.kickoff_utc); kh = kickoffYangonHour(m.kickoff_utc); }
+    if (kd && kh >= 0) {
+      if (kh >= 14) return kd; // ညနေပွဲ: သူ့ရက်ရဲ့ session
+      return yangonDatePlus(kd, -1); // မနက်ပိုင်း (hk <= 10) + gap (10 < hk < 14): မနေ့ session
+    }
+    return m.date || ''; // အချိန်မသိ/ဖတ်မရရင် stored date ကို session ရက်အဖြစ် သုံး
+  }
   function isTodayMatch(m, now){
     if (!m) return false;
     var today = todayYangonDateStr(now);
     if (!today) return true; // ရက်စွဲ တွက်မရရင် ပြထား (fail-open)
-    var dd = m.date || (m.kickoff_utc ? kickoffYangonDateStr(m.kickoff_utc) : '');
-    // kickoff နာရီ (Yangon 0-23; အချိန်မသိ/ဖတ်မရ = -1)။
-    var h = m.kickoff_utc ? kickoffYangonHour(m.kickoff_utc) : -1;
-    if (dd === today) {
-      // ဒီနေ့ပွဲ (Pho Nov 21 07:29): ညနက်ပွဲ (မနက် 6 နာရီမတိုင်ခင်
-      // ကန်မယ့်ပွဲ) သာ တစ်နေ့လုံး ပြမယ်။ နေ့လယ်ပွဲ (6 နာရီအထက်၊
-      // အချိန်မသိရတဲ့ ပွဲအပါအဝင်) က 14:00 Yangon ကျော်မှသာ ပြမယ်။
-      if (h >= 0 && h < 6) return true;
-      return yangonHourOf(now) >= 14;
-    }
-    if (dd === tomorrowYangonDateStr(now)) {
-      // မနက်ဖြန်ပွဲ: ညနက်ပွဲသာ (မနက် 6 နာရီမတိုင်ခင် ကန်မယ့်ပွဲ)
-      // တစ်နေ့လုံး ပြမယ်။ နေ့လယ်ပွဲ (အချိန်မသိရတဲ့ ပွဲအပါအဝင်) က
-      // မနက်ဖြန်ရောက်မှ 14:00 ကျော်မှ ပေါ်မယ် — ဒီနေ့ ကြိုမပေါ်ဘူး။
-      if (h >= 0 && h < 6) return true;
-      return false;
-    }
-    // သန်ဘက်ခါနဲ့ နောက်ရက်ပွဲတွေ ဘယ်တော့မှ ကြိုမပေါ်ဘူး။
+    var sd = sessionDateOf(m);
+    if (!sd) return false; // session ရက် မသိရင် မပြ (fail-closed)
+    var h = yangonHourOf(now);
+    if (h < 0) return true; // အခု နာရီ တွက်မရရင် ပြထား (fail-open)
+    if (today === sd) return h >= 14; // session စတဲ့နေ့: 14:00 ကျော်မှ ပြမယ်
+    if (today === yangonDatePlus(sd, 1)) return h < 10; // session နောက်နေ့: 10:00 မတိုင်ခင် ပြမယ်
     return false;
   }
   function todayMatches(list, now){
@@ -1228,7 +1236,7 @@
     var prevLeague = '';
     var shown = 0;
     MATCHES.forEach(function(m, i){
-      if (!isTodayMatch(m, now)) return; // ဒီနေ့ပွဲ (14:00 ကျော်မှ နေ့လယ်ပွဲ) + ညနက်ပွဲ (Pho Nov 21 07:29)
+      if (!isTodayMatch(m, now)) return; // session window [D 14:00 → D+1 10:00] ပွဲတွေ (Pho Nov 21 08:18)
       shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
@@ -1771,6 +1779,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.35"></script>
+<script src="wiring.js?v=2.36"></script>
 </body>
 </html>
