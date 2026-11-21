@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.40 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.41 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -875,7 +875,7 @@
     var total = 0;
     sel3d.forEach(function(n){ total += amt3dMap[n] || 0; });
     if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if(total > balance){ toast('ငွေမလုံလောက်ပါ'); return; }
     var over = null;
     if(LIMIT3D != null){
       sel3d.forEach(function(n){
@@ -1025,7 +1025,7 @@
     var total = 0;
     sel2d.forEach(function(n){ total += amt2dMap[n] || 0; });
     if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if(total > balance){ toast('ငွေမလုံလောက်ပါ'); return; }
     var over = null;
     if(LIMIT2D != null){
       sel2d.forEach(function(n){
@@ -1091,7 +1091,7 @@
     var nonPair = sel2d.filter(function(n){ return n[0] !== n[1]; });
     if(inp2d.r && nonPair.length && !revPer){ toast('အပြန် ငွေ ထည့်ပါ'); return; }
     var total = sel2d.length * per + (inp2d.r ? nonPair.length * revPer : 0);
-    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if(total > balance){ toast('ငွေမလုံလောက်ပါ'); return; }
     var over = null;
     if(LIMIT2D != null){
       sel2d.forEach(function(n){
@@ -1397,7 +1397,7 @@
     if (!keys.length) { toast('ကြေး အရင် ရွေးပါ'); return; }
     if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
     if (v < 500) { toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
-    if (v > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (v > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     balance -= v;
     var picks = keys.map(function(k){ return sel[k]; });
     placed.fb.push({ kind: kind, picks: picks, amt: v });
@@ -1475,7 +1475,7 @@
     var total = 0;
     keys.forEach(function(k){ total += amtBodyMap[k] || 0; });
     if(!total){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if(total > balance){ toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if(total > balance){ toast('ငွေမလုံလောက်ပါ'); return; }
     var picks = keys.map(function(k){ return { label: fbSel.body[k], amt: amtBodyMap[k] || 0 }; }).filter(function(x){ return x.amt > 0; });
     if(!picks.length){ toast('ငွေပမာဏ ထည့်ပါ'); return; }
     if(picks.some(function(x){ return x.amt < 500; })){ toast('ဘောပွဲ ၅၀၀ အောက် လောင်းမရ'); return; }
@@ -1501,6 +1501,21 @@
     var box = document.getElementById('phoneBox');
     if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-2d' || id === 'scr-3d' || id === 'scr-2d-confirm' || id === 'scr-3d-confirm');
     window.scrollTo(0,0);
+    // v2.41 (Pho Nov 21 — cursor): navigating away hides the screen
+    // (display:none), which blurs the focused amount input, and returning
+    // does not restore it — the selections (အကွက်) stay but the cursor is
+    // gone. Restore focus to the amount input Pho was typing in, so the
+    // cursor is there and he can keep typing without tapping again.
+    // (v2.40's stepper restore stays; this navigation restore is in
+    // addition to it. Only restores when an amount input was focused —
+    // a first visit never pops the keyboard open.)
+    if (id === 'scr-maung' && lastAmtFocus === 'fbAmt') {
+      var fa = document.getElementById('fbAmt');
+      if (fa) fa.focus();
+    } else if (id === 'scr-body-confirm' && lastAmtFocus && lastAmtFocus.indexOf('camtBody-') === 0) {
+      var ca = document.getElementById(lastAmtFocus);
+      if (ca) ca.focus();
+    }
   }
 
   // Cache Clear (Pho Nov 13): clear the app's stored data BUT keep the
@@ -1621,9 +1636,9 @@
     placed['3d'].forEach(function(b){ b.forEach(function(p){ t3 += p.amt; }); });
     document.getElementById('tot2d').textContent = fmt(t2) + ' ကျပ်';
     document.getElementById('tot3d').textContent = fmt(t3) + ' ကျပ်';
-    document.getElementById('walletTop').textContent = fmt(balance);
-    document.getElementById('walletBig').textContent = fmt(balance);
-    document.getElementById('walletProf').textContent = fmt(balance) + ' ကျပ်';
+    document.getElementById('walletTop').textContent = fmt(Math.max(0, balance));
+    document.getElementById('walletBig').textContent = fmt(Math.max(0, balance));
+    document.getElementById('walletProf').textContent = fmt(Math.max(0, balance)) + ' ကျပ်';
     // ဘောက်ချာ မရောပါနဲ့ (Pho Nov 11 13:26-13:27): tab ရွေးထားတဲ့ ဂိမ်းတစ်ခုတည်းပဲ ပြ
     // စာရွက်ပုံလို (Pho Nov 11 13:35, 13:48): တရွက် နံပါတ်တခု — slip တစ်ခုချင်း NO.N, အပေါ်က စာအပို မရှိ
     var wrap = document.getElementById('liveVouchWrap');
@@ -1793,6 +1808,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.40"></script>
+<script src="wiring.js?v=2.41"></script>
 </body>
 </html>
