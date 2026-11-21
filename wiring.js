@@ -1263,13 +1263,26 @@
   async function placeBetFlow(opts) {
     var me = M23.player;
     if (!me) throw new Error('အရင် လော့ဂ်အင် ဝင်ပါ');
+    // v2.41 (Pho Nov 21 — balance must never go negative): re-read the
+    // server balance JUST BEFORE saving. The local `balance` can be stale
+    // (another save in flight on a slow link passes its local check, then
+    // this save writes newBalance from the stale value — 23M002 went to
+    // -3,600 this way). Block on the fresh value. Fail closed: if the
+    // re-read fails, do not save on a stale balance — the user retries.
+    var fresh;
+    try { fresh = await PB.getOne('m23_players', me.id); }
+    catch (e) { throw new Error('လက်ကျန်ငွေ စစ်လို့ မရဘူး — ထပ်ကြိုးစားပါ'); }
+    var curBal = (fresh && typeof fresh.balance === 'number') ? fresh.balance : 0;
+    if (typeof balance !== 'undefined') balance = curBal;
+    M23.player = fresh;
+    if (opts.total > curBal) throw new Error('ငွေမလုံလောက်ပါ');
     var top = await PB.getList(opts.collection, {
       filter: 'player="' + me.id + '"', sort: '-voucher_no', perPage: 1, fields: 'voucher_no'
     });
     var no = ((top.items && top.items[0] && top.items[0].voucher_no) || 0) + 1;
     var body = Object.assign({}, opts.betBody, { voucher_no: no });
     var bet = await PB.create(opts.collection, body);
-    var newBalance = (typeof balance === 'number' ? balance : (me.balance || 0)) - opts.total;
+    var newBalance = curBal - opts.total;
     try {
       await PB.create('m23_wallet_tx', {
         player: me.id, kind: opts.kind, amount: -opts.total,
@@ -1506,7 +1519,7 @@
     var total = 0;
     sel2d.forEach(function (n) { total += amt2dMap[n] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if (total > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (total > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     var min = M23.min2d3d || 100;
     var badMin = null, blocked = null, over = null;
     sel2d.forEach(function (n) {
@@ -1550,7 +1563,7 @@
     var nonPair = sel2d.filter(function (n) { return n[0] !== n[1]; });
     if (inp2d.r && nonPair.length && !revPer) { toast('အပြန် ငွေ ထည့်ပါ'); return; }
     var total = sel2d.length * per + (inp2d.r ? nonPair.length * revPer : 0);
-    if (total > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (total > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     var min = M23.min2d3d || 100;
     if (per < min || (inp2d.r && nonPair.length && revPer < min)) { toast('အနည်းဆုံး ' + fmt(min) + ' ကျပ်'); return; }
     var blocked = null, over = null;
@@ -1590,7 +1603,7 @@
     var total = 0;
     sel3d.forEach(function (n) { total += amt3dMap[n] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if (total > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (total > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     var min = M23.min2d3d || 100;
     var badMin = null, blocked = null, over = null;
     sel3d.forEach(function (n) {
@@ -1635,7 +1648,7 @@
     if (!keys.length) { toast('ကြေး အရင် ရွေးပါ'); return; }
     if (!v || v <= 0) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
     if (v < (M23.minFb || 500)) { toast('ဘောပွဲ ' + fmt(M23.minFb || 500) + ' အောက် လောင်းမရ'); return; }
-    if (v > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (v > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     if (keys.length < 2) { toast('မောင်း အနည်းဆုံး ၂ ပွဲ ရွေးပါ'); return; }
     var maxLegs = (M23.settings && M23.settings.max_legs) || 10;
     if (keys.length > maxLegs) { toast('မောင်း အများဆုံး ၁၀ သင်း ပဲ ထိုးလို့ရတယ်'); return; }
@@ -1674,7 +1687,7 @@
     var total = 0;
     keys.forEach(function (k) { total += amtBodyMap[k] || 0; });
     if (!total) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
-    if (total > balance) { toast('လက်ကျန်ငွေ မလောက်ဘူး'); return; }
+    if (total > balance) { toast('ငွေမလုံလောက်ပါ'); return; }
     var picks = keys.map(function (k) { return { key: k, label: fbSel.body[k], amt: amtBodyMap[k] || 0 }; })
       .filter(function (x) { return x.amt > 0; });
     if (!picks.length) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
@@ -1713,10 +1726,10 @@
     var t2 = 0, t3 = 0;
     M23.bets2d.forEach(function (b) { if (!cur2 || b.session === cur2) t2 += b.total || 0; });
     M23.bets3d.forEach(function (b) { if (!cur3 || b.session === cur3) t3 += b.total || 0; });
-    var wTop = document.getElementById('walletTop'); if (wTop) wTop.textContent = fmt(balance);
-    document.querySelectorAll('.fb-bal-amt').forEach(function (el) { el.textContent = fmt(balance); });
-    var wBig = document.getElementById('walletBig'); if (wBig) wBig.textContent = fmt(balance);
-    var wProf = document.getElementById('walletProf'); if (wProf) wProf.textContent = fmt(balance) + ' ကျပ်';
+    var wTop = document.getElementById('walletTop'); if (wTop) wTop.textContent = fmt(Math.max(0, balance));
+    document.querySelectorAll('.fb-bal-amt').forEach(function (el) { el.textContent = fmt(Math.max(0, balance)); });
+    var wBig = document.getElementById('walletBig'); if (wBig) wBig.textContent = fmt(Math.max(0, balance));
+    var wProf = document.getElementById('walletProf'); if (wProf) wProf.textContent = fmt(Math.max(0, balance)) + ' ကျပ်';
     var tot2 = document.getElementById('tot2d'); if (tot2) tot2.textContent = fmt(t2) + ' ကျပ်';
     var tot3 = document.getElementById('tot3d'); if (tot3) tot3.textContent = fmt(t3) + ' ကျပ်';
     // Hide the mockup's hardcoded sample slips once real records are loaded.
