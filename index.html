@@ -165,7 +165,6 @@
   .sect { font-size: 15px; font-weight: bold; color: #0e7490; margin: 16px 2px 8px; }
   .league { font-size: 12px; font-weight: bold; color: #334155; margin: 4px 2px 2px; }
   .res-league { font-size: 13px; font-weight: bold; color: #1d4ed8; margin: 10px 2px 4px; }
-  .res-win { font-size: 12px; font-weight: bold; color: #166534; background: #dcfce7; padding: 3px 8px; text-align: center; border-top: 1px solid #bbf7d0; }
   .res-match { background: #fff; border: 1px solid #94a3b8; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
   .res-teams { display: flex; align-items: center; padding: 6px 8px; font-size: 13px; }
   .res-teams .rn { width: 22px; color: #64748b; flex-shrink: 0; }
@@ -289,7 +288,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.36 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.38 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1145,23 +1144,22 @@
     var hh = h % 12; if (hh === 0) hh = 12;
     return hh + ':' + ('0' + mm).slice(-2) + ' ' + ap;
   }
-// ပွဲစဉ် ပြတန်း — session window (Pho Nov 21 08:18, Player v2.36 — v2.35 ရဲ့
-  // ဒီနေ့ပွဲ 14:00 ဂိတ်က လွန်သွားတယ်: ဒီနေ့ပွဲတွေ မနက်ကတည်းက ပျောက်ပြီး
-  // မနက်ဖြန်မနက်ပိုင်း ပွဲတွေ စောစောပေါ်နေတယ်; MOUNG556 မှန်၊ ငါတို့မှား):
-  // session တစ်ခု = [D 14:00 → D+1 10:00] (Yangon)။ ပွဲတစ်ပွဲဟာ သူ့ kickoff
+// ပွဲစဉ် ပြတန်း — session window (Pho Nov 21 13:56, Player v2.37 — ဘောပွဲ
+  // session 14:00 အစား 12:00 က စမယ်; 2D နေ့လည်ပွဲ 14:00 အတိုင်းပဲ ထားတယ်):
+  // session တစ်ခု = [D 12:00 → D+1 10:00] (Yangon)။ ပွဲတစ်ပွဲဟာ သူ့ kickoff
   // (Yangon နာရီ hk, ရက်စွဲ Dk) အရ session တစ်ခုထဲ ပါတယ် —
-  // (1) hk >= 14 → session Dk (ညနေပွဲက သူ့ရက်ရဲ့ session ထဲ)။
+  // (1) hk >= 12 → session Dk (ညနေပွဲက သူ့ရက်ရဲ့ session ထဲ)။
   // (2) hk < 10 → session Dk-1 (မိုးလင်း 06:30/07:00 Nassar တို့လို မနက်ပိုင်း
-  // ပွဲတွေ — မနေ့ 14:00 ကတည်းက ပေါ်တယ်)။
+  // ပွဲတွေ — မနေ့ 12:00 ကတည်းက ပေါ်တယ်)။
   // (3) hk <= 10 → session Dk-1 (10:00 အထိ tail — 10:00 sharp လည်း မနေ့
-  // session ထဲ ပါမယ်; မဟုတ်ရင် 10:00 ပွဲ ထိုးလို့မရဘူး)။ 10 < hk < 14 →
+  // session ထဲ ပါမယ်; မဟုတ်ရင် 10:00 ပွဲ ထိုးလို့မရဘူး)။ 10 < hk < 12 →
   // session Dk-1 (gap ပွဲ — ထိုးလို့ရအောင် မနေ့ session ထဲ ထည့်တယ်;
   // top-5 လိဒ်မှာ မရှိသလောက်ပဲ)။
   // (4) အချိန်မသိ/ဖတ်မရတဲ့ ပွဲ (date-only, garbage kickoff_utc) → m.date ကို
   // session ရက်အဖြစ် သုံးတယ် (fail-closed — အဲ့ရက်ရဲ့ session မှာပဲ ပေါ်မယ်၊
   // စောပြီး ကြိုမပေါ်ဘူး)။
-  // အခု အချိန်က ပွဲရဲ့ session window [D 14:00, D+1 10:00] ထဲမှာ ရှိမှ
-  // ပြမယ်။ session ကြား 10:00–14:00 မှာ စာရင်း လွတ်တယ် (အဲ့အချိန်
+  // အခု အချိန်က ပွဲရဲ့ session window [D 12:00, D+1 10:00] ထဲမှာ ရှိမှ
+  // ပြမယ်။ session ကြား 10:00–12:00 မှာ စာရင်း လွတ်တယ် (အဲ့အချိန်
   // ကန်မယ့်ပွဲ မရှိဘူး)။ ဒေတာ (PocketBase) ကတော့ အတိုင်းပဲ ရှိနေတယ်၊
   // ပြတာပဲ စစ်တယ်။
   function todayYangonDateStr(now){
@@ -1210,8 +1208,8 @@
     var kd = '', kh = -1;
     if (m.kickoff_utc) { kd = kickoffYangonDateStr(m.kickoff_utc); kh = kickoffYangonHour(m.kickoff_utc); }
     if (kd && kh >= 0) {
-      if (kh >= 14) return kd; // ညနေပွဲ: သူ့ရက်ရဲ့ session
-      return yangonDatePlus(kd, -1); // မနက်ပိုင်း (hk <= 10) + gap (10 < hk < 14): မနေ့ session
+      if (kh >= 12) return kd; // ညနေပွဲ: သူ့ရက်ရဲ့ session
+      return yangonDatePlus(kd, -1); // မနက်ပိုင်း (hk <= 10) + gap (10 < hk < 12): မနေ့ session
     }
     return m.date || ''; // အချိန်မသိ/ဖတ်မရရင် stored date ကို session ရက်အဖြစ် သုံး
   }
@@ -1223,7 +1221,7 @@
     if (!sd) return false; // session ရက် မသိရင် မပြ (fail-closed)
     var h = yangonHourOf(now);
     if (h < 0) return true; // အခု နာရီ တွက်မရရင် ပြထား (fail-open)
-    if (today === sd) return h >= 14; // session စတဲ့နေ့: 14:00 ကျော်မှ ပြမယ်
+    if (today === sd) return h >= 12; // session စတဲ့နေ့: 12:00 ကျော်မှ ပြမယ်
     if (today === yangonDatePlus(sd, 1)) return h < 10; // session နောက်နေ့: 10:00 မတိုင်ခင် ပြမယ်
     return false;
   }
@@ -1236,7 +1234,7 @@
     var prevLeague = '';
     var shown = 0;
     MATCHES.forEach(function(m, i){
-      if (!isTodayMatch(m, now)) return; // session window [D 14:00 → D+1 10:00] ပွဲတွေ (Pho Nov 21 08:18)
+      if (!isTodayMatch(m, now)) return; // session window [D 12:00 → D+1 10:00] ပွဲတွေ (Pho Nov 21 13:56)
       shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
@@ -1270,7 +1268,6 @@
         var hn = n, an = n + 1; n++;
         html += '<div class="res-match"><div class="res-teams"><span class="rn">' + hn + '.</span><span class="tn">' + teamMM(m.home) + '</span><span class="res-score">' + m.sh + ' - ' + m.sa + '</span><span class="tn" style="text-align:right">' + teamMM(m.away) + '</span><span class="rn" style="text-align:right">' + an + '.</span></div>';
         html += '<div class="res-odds"><span class="ro">' + (m.side === 'h' ? m.hcp : '') + '</span><span class="gp">Gp' + m.over + '</span><span class="ro" style="text-align:right">' + (m.side === 'a' ? m.hcp : '') + '</span></div>';
-        if (m.home === 'Roma' && m.away === 'Sassuolo') html += '<div class="res-win">✅ အနိုင် 1,000 ကျပ်</div>';
         html += '</div>';
       });
     });
@@ -1779,6 +1776,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.36"></script>
+<script src="wiring.js?v=2.38"></script>
 </body>
 </html>
