@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.43 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.44 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1322,6 +1322,7 @@
     return Math.round(stake * parlayTableMult(ls.length, draws) * scale);
   }
   function toggleOdd(btn){
+    lastBetTapAt = Date.now(); // v2.44: mark the betting tap for the focus guard.
     var k = btn.dataset.k;
     var parts = k.split(':');
     var mode = parts[0], idx = +parts[1], type = parts[2];
@@ -1385,6 +1386,7 @@
   }
   // ငွေ ရိုက်တာ — Maung ငွေထုတ် ပုံစံ (Pho Nov 11 21:14): [−] ငွေ [+] + အမြန် ခလုတ် 5000/10000/20000/50000
   function adjAmt(id, d){
+    lastBetTapAt = Date.now(); // v2.44: mark the betting tap for the focus guard.
     var el = document.getElementById(id);
     var v = parseInt(el.value, 10);
     if(isNaN(v)) v = 0;
@@ -1428,6 +1430,43 @@
   // never disappears while typing an amount. Never cleared on blur — the
   // tap that blurs the input fires before the stepper's click handler.
   var lastAmtFocus = null;
+  var lastBetTapAt = 0; // v2.44: ms timestamp of the last tap on a betting control (leg/stepper).
+  // v2.44 (Pho Nov 21 — cursor): focus GUARD. v2.40/v2.41/v2.42 cover the
+  // known paths (steppers, navigation, leg taps) and a real headless-Chrome
+  // repro proves focus never leaves the amount input through any of them —
+  // yet Pho reports the cursor still disappears "after a moment" while
+  // selecting matches, so the trigger is a path the tests cannot see (a
+  // stale page, or the mobile keyboard dismissing while focus stays). This
+  // guard is a safety net: when an amount input loses focus while Pho is on
+  // a bet screen and was typing an amount, restore it — but ONLY when the
+  // loss is tied to betting (focus went to a betting button, or to BODY
+  // within 1s of tapping a betting control). A plain tap on empty space
+  // (no recent betting tap) is an intentional dismiss and is NOT overridden,
+  // so the keyboard never pops open unprompted. After a successful Save,
+  // placeBetFlow clears lastAmtFocus, so the guard stays quiet.
+  document.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (!t || !t.id) return;
+    var isAmt = (t.id === 'fbAmt') || (t.id.indexOf('camtBody-') === 0);
+    if (!isAmt) return;
+    var scr = (t.id === 'fbAmt') ? 'scr-maung' : 'scr-body-confirm';
+    setTimeout(function () {
+      var el = document.getElementById(t.id);
+      if (!el) return;
+      var scrEl = document.getElementById(scr);
+      if (!scrEl || !scrEl.classList.contains('active')) return;
+      if (lastAmtFocus !== t.id) return;
+      var ae = document.activeElement;
+      if (!ae || ae === el) return;
+      var cls = (ae.className || '') + '';
+      var tag = (ae.tagName || '').toLowerCase();
+      if (cls.indexOf('btn-red') >= 0 || cls.indexOf('btn-ghost') >= 0 || ae.id === 'toast') return;
+      var isButton = (tag === 'button');
+      var isBody = (ae === document.body) || (ae === document.documentElement);
+      var recentBetTap = (Date.now() - lastBetTapAt) < 1000;
+      if (isButton || (isBody && recentBetTap)) el.focus();
+    }, 0);
+  });
   function goConfirmBody(){
     var keys = Object.keys(fbSel.body);
     if(!keys.length){ toast('ကြေး အရင် ရွေးပါ'); return; }
@@ -1469,6 +1508,7 @@
   }
   function setStepBody(v){ stepBody = parseInt(v, 10) || 500; }
   function adjAmtBody(k, dir){
+    lastBetTapAt = Date.now(); // v2.44: mark the betting tap for the focus guard.
     var a = (amtBodyMap[k] || 0) + dir * stepBody;
     if(a < 0) a = 0;
     amtBodyMap[k] = a;
@@ -1829,6 +1869,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.43"></script>
+<script src="wiring.js?v=2.44"></script>
 </body>
 </html>
