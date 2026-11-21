@@ -1639,7 +1639,7 @@
     if (keys.length < 2) { toast('မောင်း အနည်းဆုံး ၂ ပွဲ ရွေးပါ'); return; }
     var maxLegs = (M23.settings && M23.settings.max_legs) || 10;
     if (keys.length > maxLegs) { toast('မောင်း အများဆုံး ၁၀ သင်း ပဲ ထိုးလို့ရတယ်'); return; }
-    if (v > (M23.limitFb || 8000)) { toast('လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    // Pho Nov 21 (v2.39): football limit is display-only (red) — never blocks the bet.
     var seenMatch = {};
     var legs = [];
     for (var i = 0; i < keys.length; i++) {
@@ -1679,8 +1679,7 @@
       .filter(function (x) { return x.amt > 0; });
     if (!picks.length) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
     if (picks.some(function (x) { return x.amt < (M23.minFb || 500); })) { toast('ဘောပွဲ ' + fmt(M23.minFb || 500) + ' အောက် လောင်းမရ'); return; }
-    // Per-leg limit (schema): each leg's stake vs limit_fb.
-    if (picks.some(function (x) { return x.amt > (M23.limitFb || 8000); })) { toast('လီမစ်ပြည့်ပြီ — ထိုးမရတော့ဘူး'); return; }
+    // Pho Nov 21 (v2.39): football limit is display-only (red) — never blocks the bet.
     var legs = [];
     for (var i = 0; i < picks.length; i++) {
       var parts = picks[i].key.split(':');
