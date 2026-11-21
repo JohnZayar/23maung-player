@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.39 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.40 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -356,11 +356,10 @@
       <div class="fb-controls">
         <span class="fb-count" id="fbSelChip">0 မောင်း</span>
         <button class="fb-step" onclick="adjAmt('fbAmt',-500)">−</button>
-        <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ" oninput="updateFbAmtLimit()">
+        <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ" onfocus="lastAmtFocus='fbAmt'">
         <button class="fb-step" onclick="adjAmt('fbAmt',500)">+</button>
         <button class="btn-red" onclick="placeFb('မောင်း')">ထိုးမည်</button>
       </div>
-      <div class="limit-note" id="fbLimitNote">လီမစ် ကျော်နေတယ်</div>
     </div>
     
   </div>
@@ -387,7 +386,6 @@
         <tbody id="confirmBodyBody"></tbody>
       </table>
       <div class="row" style="margin-top:12px"><span>Total:</span><b id="confirmBodyTotal">0</b></div>
-      <div class="limit-note" id="confirmBodyLimitNote">လီမစ် ကျော်နေတယ်</div>
     </div>
     <div class="confirm-bar">
       <button class="cb-trash" onclick="clearAmtBody()">🗑</button>
@@ -1383,19 +1381,12 @@
     v += d;
     if(v < 0) v = 0;
     el.value = v;
-    if (id === 'fbAmt') updateFbAmtLimit();
+    // v2.40 (Pho Nov 21 — cursor): tapping a stepper must not steal the
+    // cursor from the amount input — restore focus if this input was focused.
+    if (lastAmtFocus === id) el.focus();
   }
-  // Parlay stake red (Pho Nov 21, v2.39): fbAmt turns red when over the
-  // limit; the note shows, but the bet is never blocked.
-  function updateFbAmtLimit(){
-    var el = document.getElementById('fbAmt');
-    if (!el) return;
-    var v = parseInt(el.value, 10);
-    var over = !isNaN(v) && v > fbLimit();
-    el.classList.toggle('over-limit', over);
-    var note = document.getElementById('fbLimitNote');
-    if (note) note.style.display = over ? 'block' : 'none';
-  }
+  // v2.40 (Pho Nov 21): the limit is NEVER shown to the Player — no red,
+  // no note, no number. The limit lives in Admin only.
   function placeFb(kind){
     // မောင်း only — ဘော်ဒီ uses goConfirmBody() (per-pick amounts).
     var mode = 'maung';
@@ -1422,10 +1413,11 @@
   // ဘော်ဒီ အတည်ပြု (Pho Nov 11 19:28): ၁ပွဲကို ငွေ ၁ခု — each pick its own amount, Total = sum
   var amtBodyMap = {};
   var stepBody = 500; // football min bet 500 (Pho Nov 11 21:47 — 100 cannot be bet)
-  // Football limit (Pho Nov 21, v2.39): display-only — over-limit amounts
-  // show RED, never block the bet. Limit numbers are NEVER displayed
-  // (settled wiring.js header rule) — the note carries no number.
-  function fbLimit(){ return (typeof M23 !== 'undefined' && M23.limitFb) || 8000; }
+  // v2.40 (Pho Nov 21 — cursor): id of the amount input last focused
+  // (fbAmt / camtBody-*). Stepper taps restore focus to it so the cursor
+  // never disappears while typing an amount. Never cleared on blur — the
+  // tap that blurs the input fires before the stepper's click handler.
+  var lastAmtFocus = null;
   function goConfirmBody(){
     var keys = Object.keys(fbSel.body);
     if(!keys.length){ toast('ကြေး အရင် ရွေးပါ'); return; }
@@ -1442,22 +1434,17 @@
     var out = '';
     keys.forEach(function(k, i){
       var a = amtBodyMap[k] || 0;
-      out += '<tr><td>' + (i + 1) + '</td><td>' + stackLabel(fbSel.body[k]) + '</td><td><span class="amt-cell"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',-1)">−</button><input class="camt-input' + (a > fbLimit() ? ' over-limit' : '') + '" id="camtBody-' + k + '" type="number" value="' + a + '" min="0" inputmode="numeric" onchange="setAmtBody(\'' + k + '\', this.value)"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',1)">+</button></span></td></tr>';
+      out += '<tr><td>' + (i + 1) + '</td><td>' + stackLabel(fbSel.body[k]) + '</td><td><span class="amt-cell"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',-1)">−</button><input class="camt-input" id="camtBody-' + k + '" type="number" value="' + a + '" min="0" inputmode="numeric" onchange="setAmtBody(\'' + k + '\', this.value)" onfocus="lastAmtFocus=\'camtBody-' + k + '\'"><button class="step-btn" onclick="adjAmtBody(\'' + k + '\',1)">+</button></span></td></tr>';
     });
     document.getElementById('confirmBodyBody').innerHTML = out;
     updateConfirmTotalBody();
   }
   function updateConfirmTotalBody(){
-    var t = 0, over = false;
+    var t = 0;
     Object.keys(amtBodyMap).forEach(function(k){
       var a = amtBodyMap[k] || 0; t += a;
-      if (a > fbLimit()) over = true;
-      var el = document.getElementById('camtBody-' + k);
-      if (el) el.classList.toggle('over-limit', a > fbLimit());
     });
     document.getElementById('confirmBodyTotal').textContent = fmt(t);
-    var note = document.getElementById('confirmBodyLimitNote');
-    if (note) note.style.display = over ? 'block' : 'none';
   }
   function setStepBody(v){ stepBody = parseInt(v, 10) || 500; }
   function adjAmtBody(k, dir){
@@ -1466,6 +1453,9 @@
     amtBodyMap[k] = a;
     var el = document.getElementById('camtBody-' + k);
     if(el) el.value = a;
+    // v2.40 (Pho Nov 21 — cursor): restore focus if this input was focused,
+    // so tapping −/+ does not steal the cursor.
+    if(el && lastAmtFocus === 'camtBody-' + k) el.focus();
     updateConfirmTotalBody();
   }
   function setAmtBody(k, v){
@@ -1803,6 +1793,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.39"></script>
+<script src="wiring.js?v=2.40"></script>
 </body>
 </html>
