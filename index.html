@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.41 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.42 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1372,6 +1372,16 @@
     var n = Object.keys(sel).length;
     if (mode === 'maung') document.getElementById('fbSelChip').textContent = n + ' မောင်း';
     else if (mode === 'body') document.getElementById('fbBodyChip').textContent = n + ' ကွက်';
+    // v2.42 (Pho Nov 21 — cursor): tapping a leg button moves focus to
+    // the button, blurring the amount input and closing the keyboard —
+    // every leg tap killed the cursor (4 taps = gone 4 times). Restore
+    // focus to fbAmt when Pho was typing in it. Body list has no amount
+    // input, so never restore there (lastAmtFocus may be stale from the
+    // parlay screen); never restore when nothing was focused.
+    if (mode === 'maung' && lastAmtFocus === 'fbAmt') {
+      var fa = document.getElementById('fbAmt');
+      if (fa) fa.focus();
+    }
   }
   // ငွေ ရိုက်တာ — Maung ငွေထုတ် ပုံစံ (Pho Nov 11 21:14): [−] ငွေ [+] + အမြန် ခလုတ် 5000/10000/20000/50000
   function adjAmt(id, d){
@@ -1426,6 +1436,17 @@
     amtBodyMap = kept;
     renderConfirmBody();
     go('scr-body-confirm');
+    // v2.42 (Pho Nov 21 — cursor): the confirm screen opens with the
+    // cursor nowhere (4ကွက် ကာဆာပျောက်) — go()'s restore only fires when
+    // a camtBody input was already focused, which is never true on first
+    // entry. Focus the first amount input so the cursor is ready.
+    if (keys.length) {
+      var firstBodyAmt = document.getElementById('camtBody-' + keys[0]);
+      if (firstBodyAmt) {
+        lastAmtFocus = 'camtBody-' + keys[0];
+        firstBodyAmt.focus();
+      }
+    }
   }
   // confirm screen only: stack the one-line label as home / Vs / away for the narrow Party column (Pho Nov 11 21:43)
   function stackLabel(l){ return l.replace(' VS ', '<br><span class="vs">Vs</span><br>'); }
@@ -1808,6 +1829,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.41"></script>
+<script src="wiring.js?v=2.42"></script>
 </body>
 </html>
