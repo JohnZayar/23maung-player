@@ -132,45 +132,27 @@
   }
   M23.mirrorOdds = mirrorOdds;
 
-  // Parlay payout — balanced table (Pho Nov 17, APPROVED): a little above
-  // the outside paper bookie's printed sheet, balanced across every draw
-  // cell. Same table as Admin logic.js, ported verbatim. The old formula
-  // (legs x2, then 15/20/30% commission) paid far above the sheet at high
-  // legs (8 legs: 179.2x vs sheet 100x). The table IS the net return
-  // multiplier (stake included); commission no longer applies to parlays.
-  // All-win by legs (sheet 4-8: 13/21/32/50/100, +~10%):
-  var PARLAY_ALLWIN = { 2: 3.5, 3: 7, 4: 14, 5: 23, 6: 35, 7: 55, 8: 110, 9: 200, 10: 350 };
-  // Draw rows, legs 4-8, draws 1-4 (sheet values x1.1, cleaned to .5 steps).
-  var PARLAY_DRAWS = {
-    4: { 1: 5.5, 2: 2.5, 3: 2, 4: 1 },
-    5: { 1: 11, 2: 4.5, 3: 3.5, 4: 1.1 },
-    6: { 1: 18, 2: 7, 3: 4.5, 4: 2.5 },
-    7: { 1: 33, 2: 13.5, 3: 8, 4: 8 },
-    8: { 1: 44, 2: 24.5, 3: 13.5, 4: 9 }
-  };
-  function parlayTableMult(nLegs, nDraws) {
-    var row = PARLAY_DRAWS[nLegs];
-    if (row && row[nDraws] !== undefined) return row[nDraws];
-    var base = PARLAY_ALLWIN[nLegs];
-    if (base === undefined) return 1;
-    return Math.max(1, base / Math.pow(2, nDraws));
-  }
-  M23.parlayTableMult = parlayTableMult;
+  // Parlay payout — bet365 method (Pho Nov 22, ORDERED — replaces the Nov-17
+  // table): gross = stake x Π(leg factors); net (TOTAL return, stake
+  // included) = gross x (1 - 0.16). The 16% is a FIXED commission on the
+  // gross (from Pho's 365maung sheet image) — NOT a Settings knob. Same
+  // method as Admin logic.js, ported verbatim. Leg factors: full win x2,
+  // pyar win x(1+pyar/100), pyar loss x(1-pyar/100), push x1, full loss = 0.
   // Display/settlement formula only — the frontend never credits winnings
-  // itself. Full win contributes x2 (scale 1), partial win x(1+pyar/100),
-  // partial loss x(1-pyar/100), push counts as a draw, full loss = 0.
+  // itself.
+  var PARLAY_COMM_BET365 = 0.16;
+  M23.PARLAY_COMM_BET365 = PARLAY_COMM_BET365;
   function parlayPayout(stake, legs) {
     var ls = legs || [];
     if (!ls.length) return 0;
-    var draws = 0, scale = 1;
+    var gross = stake;
     for (var i = 0; i < ls.length; i++) {
       var lg = ls[i];
       if (lg.res === 'loss') return 0;
-      if (lg.res === 'push') { draws++; continue; }
-      var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : 0;
-      scale *= f / 2;
+      var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : lg.res === 'push' ? 1 : 0;
+      gross *= f;
     }
-    return Math.round(stake * parlayTableMult(ls.length, draws) * scale);
+    return Math.round(gross * (1 - PARLAY_COMM_BET365));
   }
   M23.parlayPayout = parlayPayout;
 
