@@ -182,14 +182,18 @@
   // settleLeg (ported verbatim below; pyarFromLine/evalLine). A voucher
   // shows ✅/❌ only once its result is fully known; before that it renders
   // exactly as before (no mark, no highlight).
-  function pyarFromLine(line) { return Math.round((Math.abs(line) % 1) * 100); }
+  // Pho Nov 22 ("အတိုမဟုတ်ဘူး"): the pyar is the fraction digits AS
+  // WRITTEN — 2+5 = 5 pyar, NOT 50. Hundredths, with 50 mapped to 5.
+  function pyarFromLine(line) { var p = Math.round((Math.abs(line) % 1) * 100); return p === 50 ? 5 : p; }
   // Pho Nov 17 (CORRECTED — "စျေးဖွင့်တဲ့ မိန်း ၁ဂိုး ၂ဂိုး ကိုတည်ရမှာပြီးမှ
   // ပြားယူ"): the MAIN line (integer part) is the base; the pyar applies
   // ONLY when the result lands exactly ON the main, IN THE LINE'S
   // DIRECTION (line < 0 -> margin == +main; line > 0 -> margin == -main).
   // A result that deviates from the main is a FULL win / FULL loss. The
   // LINE SIGN decides who wins the pyar: line < 0 -> halfWin, line > 0 ->
-  // halfLoss. BODY legs only — goal legs use evalGoalLine below. Ported
+  // halfLoss — EXCEPT at main 0 (Pho Nov 22): the pyar goes to the
+  // RECEIVING side (Villa =75 draws 0:0 -> Villa loses 75, Sunderland
+  // wins 75). BODY legs only — goal legs use evalGoalLine below. Ported
   // verbatim from Admin logic.js evalLine; DISPLAY ONLY.
   function evalLine(line, margin) {
     var pyar = pyarFromLine(line);
@@ -199,22 +203,26 @@
     if (frac > 0) {
       var pyarMargin = line < 0 ? main : -main;
       if (margin === pyarMargin) {
-        return { res: line < 0 ? 'halfWin' : 'halfLoss', pyar: pyar };
+        var win = main === 0 ? line > 0 : line < 0;
+        return { res: win ? 'halfWin' : 'halfLoss', pyar: pyar };
       }
     }
     return { res: adj > 0 ? 'win' : adj < 0 ? 'loss' : 'push', pyar: pyar };
   }
   // Goal-total evaluation (Pho Nov 17, "3-45" example): "+" goal line ->
   // OVER wins the pyar at the main; "-" goal line ("3 goals, 45 lose") ->
-  // OVER loses it, UNDER wins it. Away from the main, total vs |gl_line|
-  // decides. Ported verbatim from Admin logic.js evalGoalLine; DISPLAY ONLY.
+  // OVER loses it, UNDER wins it. At main 0 (Pho Nov 22, same rule as
+  // evalLine by analogy): the over needs goals and got none, so the over
+  // loses the pyar and the under wins it. Away from the main, total vs
+  // |gl_line| decides. Ported verbatim from Admin logic.js evalGoalLine;
+  // DISPLAY ONLY.
   function evalGoalLine(glLine, total, pick) {
     var g = Math.abs(glLine);
     var frac = g % 1;
     var main = Math.trunc(g);
-    var pyar = Math.round(frac * 100);
+    var pyar = pyarFromLine(glLine);
     if (frac > 0 && total === main) {
-      var overWinsPyar = glLine > 0;
+      var overWinsPyar = main === 0 ? glLine < 0 : glLine > 0;
       var won = pick === 'over' ? overWinsPyar : !overWinsPyar;
       return { res: won ? 'halfWin' : 'halfLoss', pyar: pyar };
     }
