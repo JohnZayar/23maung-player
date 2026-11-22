@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.47 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.48 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1235,20 +1235,26 @@
     var html = '';
     var prevLeague = '';
     var shown = 0;
+    // v2.48 (Pho Nov 22 — Kasa red must survive re-render): the 30s auto-refresh
+    // and every screen switch rebuild this list from scratch; re-apply the red
+    // .on highlight to every pick still held in fbSel[mode], so a picked team
+    // stays red instead of going blank while the count chip still says 3 မောင်း.
+    var picked = fbSel[mode] || {};
+    function onCls(k){ return picked[k] ? ' on' : ''; }
     MATCHES.forEach(function(m, i){
       if (!isTodayMatch(m, now)) return; // session window [D 12:00 → D+1 10:00] ပွဲတွေ (Pho Nov 21 13:56)
       shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
       html += '<div class="match' + (closed ? ' closed' : '') + '"><div class="mhead"><span>★ ' + m.date + '</span><span>' + m.time + ' · ပိတ် ' + closeLabel(m) + (closed ? ' · ပိတ်ပြီ' : '') + '</span></div><div class="mbody">';
-      html += '<div class="mteams"><div class="mteam" data-team="' + mode + ':' + i + ':hcp-h" onclick="tapTeamRow(this)">' + teamBadge(m.home) + teamMM(m.home) + '</div><div class="mteam" data-team="' + mode + ':' + i + ':hcp-a" onclick="tapTeamRow(this)">' + teamBadge(m.away) + teamMM(m.away) + '</div></div>';
+      html += '<div class="mteams"><div class="mteam' + onCls(mode + ':' + i + ':hcp-h') + '" data-team="' + mode + ':' + i + ':hcp-h" onclick="tapTeamRow(this)">' + teamBadge(m.home) + teamMM(m.home) + '</div><div class="mteam' + onCls(mode + ':' + i + ':hcp-a') + '" data-team="' + mode + ':' + i + ':hcp-a" onclick="tapTeamRow(this)">' + teamBadge(m.away) + teamMM(m.away) + '</div></div>';
       html += '<div class="mhcp">';
-      html += '<div class="cell">' + (m.hcpSide === 'h' ? '<button class="odd" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
-      html += '<div class="cell">' + (m.hcpSide === 'a' ? '<button class="odd" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
+      html += '<div class="cell">' + (m.hcpSide === 'h' ? '<button class="odd' + onCls(mode + ':' + i + ':hcp-h') + '" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty' + onCls(mode + ':' + i + ':hcp-h') + '" data-k="' + mode + ':' + i + ':hcp-h" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
+      html += '<div class="cell">' + (m.hcpSide === 'a' ? '<button class="odd' + onCls(mode + ':' + i + ':hcp-a') + '" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">' + m.hcp + '</button>' : '<button class="odd empty' + onCls(mode + ':' + i + ':hcp-a') + '" data-k="' + mode + ':' + i + ':hcp-a" onclick="toggleOdd(this)">&nbsp;</button>') + '</div>';
       html += '</div>';
       html += '<div class="mgoal">';
-      html += '<button class="gcell" data-k="' + mode + ':' + i + ':over" onclick="toggleOdd(this)">ဂိုးပေါ်<b>' + m.over + '</b></button>';
-      html += '<button class="gcell" data-k="' + mode + ':' + i + ':under" onclick="toggleOdd(this)">ဂိုးအောက်</button>';
+      html += '<button class="gcell' + onCls(mode + ':' + i + ':over') + '" data-k="' + mode + ':' + i + ':over" onclick="toggleOdd(this)">ဂိုးပေါ်<b>' + m.over + '</b></button>';
+      html += '<button class="gcell' + onCls(mode + ':' + i + ':under') + '" data-k="' + mode + ':' + i + ':under" onclick="toggleOdd(this)">ဂိုးအောက်</button>';
       html += '</div></div></div>';
     });
     if (!shown) html = '<div class="hist-row"><span class="muted">ဒီနေ့ ပွဲမရှိပါ</span></div>';
@@ -1784,6 +1790,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.47"></script>
+<script src="wiring.js?v=2.48"></script>
 </body>
 </html>
