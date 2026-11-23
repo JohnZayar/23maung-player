@@ -1059,10 +1059,12 @@
     };
   }
 
-  // Pho Nov 23 — big matches on top (Player v2.52): league priority
-  // (England first, then Champions League, Europa, La Liga, Serie A,
-  // Bundesliga, Ligue 1). Substring matching so 5Dollar/iSports naming
-  // differences ("England Premier League" vs "English Premier League",
+  // Pho Nov 23 — big matches on top (Player v2.52, reordered v2.53):
+  // v2.53 (Pho Nov 23 14:51 — 'လိဒ် ၅ခု အပေါ်တင်, ချန်ပီယံလိဒ်/AFC အောက်ချ'):
+  // 5 domestic leagues on top (England, Spain, Italy, Germany, France),
+  // then Champions League (UEFA + AFC) and Europa League below them.
+  // Substring matching so 5Dollar/iSports naming differences
+  // ("England Premier League" vs "English Premier League",
   // "Italy Serie A" vs "Serie A") both work. Guards keep lookalikes out:
   // Egyptian/Brazilian Premier/Serie A are NOT the big ones, and second
   // divisions ("La Liga 2", "Bundesliga 2", "Ligue 2") fall through to
@@ -1070,12 +1072,12 @@
   function bigLeagueRank(league) {
     var s = ' ' + String(league || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
     if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league')) return 1;
-    if (/champions league/.test(s)) return 2;
-    if (/europa league/.test(s)) return 3;
-    if (/la liga/.test(s) && !/liga 2/.test(s)) return 4;
-    if (/serie a/.test(s) && !/brazil/.test(s)) return 5;
-    if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 6;
-    if (/ligue 1/.test(s)) return 7;
+    if (/la liga/.test(s) && !/liga 2/.test(s)) return 2;
+    if (/serie a/.test(s) && !/brazil/.test(s)) return 3;
+    if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 4;
+    if (/ligue 1/.test(s)) return 5;
+    if (/champions league/.test(s)) return 6;
+    if (/europa league/.test(s)) return 7;
     return 99;
   }
   M23.bigLeagueRank = bigLeagueRank;
@@ -1338,6 +1340,28 @@
     };
   }
   M23.legFromSelection = legFromSelection;
+
+  // v2.53 (Pho Nov 23 — ကြေးပြောင်းရင် ခဏစောင့်): compare the CURRENT odds
+  // of every picked leg against the snapshot taken when the user tapped it
+  // (fbOddsAtPick, stored by toggleOdd in index.html). Returns the count
+  // of legs whose displayed odds moved (hcp/over string or numeric line).
+  // placeFb/confirmBetBody ask 'ကြေးပြောင်းသွားပြီ — အသစ်နဲ့ထိုးမလား?'
+  // when this is > 0, and only bet when the user accepts the new odds.
+  function oddsChangedCount(mode) {
+    var sel = (typeof fbSel !== 'undefined' && fbSel[mode]) || {};
+    var snap = (typeof fbOddsAtPick !== 'undefined' && fbOddsAtPick[mode]) || {};
+    var n = 0;
+    Object.keys(sel).forEach(function (k) {
+      var parts = k.split(':');
+      var idx = +parts[1];
+      var m = (typeof MATCHES !== 'undefined') ? MATCHES[idx] : null;
+      var s = snap[k];
+      if (!m || !s) return;
+      if (m.hcp !== s.hcp || m.over !== s.over || m.ah_line !== s.ah_line || m.gl_line !== s.gl_line) n++;
+    });
+    return n;
+  }
+  M23.oddsChangedCount = oddsChangedCount;
 
   // ============================================================ OVERRIDES ===
   // Save the mockup originals where a fallback is still useful.
@@ -1673,6 +1697,13 @@
     if (keys.length < 2) { toast('မောင်း အနည်းဆုံး ၂ ပွဲ ရွေးပါ'); return; }
     var maxLegs = (M23.settings && M23.settings.max_legs) || 10;
     if (keys.length > maxLegs) { toast('မောင်း အများဆုံး ၁၀ သင်း ပဲ ထိုးလို့ရတယ်'); return; }
+    // v2.53 (Pho Nov 23 — ကြေးပြောင်းရင် ခဏစောင့်): if any picked leg's
+    // odds moved since the tap, ask first — bet only on the new odds
+    // when the user accepts them; Cancel keeps the picks so they can
+    // re-check and tap again.
+    if (oddsChangedCount('maung') > 0) {
+      if (!confirm('ကြေးပြောင်းသွားပြီ — အသစ်နဲ့ထိုးမလား?')) return;
+    }
     // Pho Nov 21 (v2.39): football limit is display-only (red) — never blocks the bet.
     var seenMatch = {};
     var legs = [];
@@ -1713,6 +1744,11 @@
       .filter(function (x) { return x.amt > 0; });
     if (!picks.length) { toast('ငွေပမာဏ ထည့်ပါ'); return; }
     if (picks.some(function (x) { return x.amt < (M23.minFb || 500); })) { toast('ဘောပွဲ ' + fmt(M23.minFb || 500) + ' အောက် လောင်းမရ'); return; }
+    // v2.53 (Pho Nov 23 — ကြေးပြောင်းရင် ခဏစောင့်): same odds-change
+    // check as the parlay flow — ask before betting on moved odds.
+    if (oddsChangedCount('body') > 0) {
+      if (!confirm('ကြေးပြောင်းသွားပြီ — အသစ်နဲ့ထိုးမလား?')) return;
+    }
     // Pho Nov 21 (v2.39): football limit is display-only (red) — never blocks the bet.
     var legs = [];
     for (var i = 0; i < picks.length; i++) {
