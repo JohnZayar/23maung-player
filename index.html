@@ -290,7 +290,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.52 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.53 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -684,6 +684,11 @@
   var vouchTab = '2d'; // ဘောက်ချာ tab: 2d | 3d | 1d (1D = ဘောပွဲ; မရောပါနဲ့ — Pho Nov 11 13:26-13:27)
   var balance = 50000;
   var fbSel = { maung: {}, body: {} };
+  // v2.53 (Pho Nov 23 — ကြေးပြောင်းရင် ခဏစောင့်): odds snapshot at the
+  // moment a pick is tapped, keyed like fbSel. placeFb/confirmBetBody
+  // compare the CURRENT odds to this snapshot; if any picked leg moved,
+  // the app asks 'ကြေးပြောင်းသွားပြီ — အသစ်နဲ့ထိုးမလား?' before betting.
+  var fbOddsAtPick = { maung: {}, body: {} };
   var fmt = function(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
   var MATCHES = [
     { league: 'England Premier League', date: '21-11-26', time: '7:00 PM', home: 'Man City', away: 'Fulham', hcpSide: 'h', hcp: '1-25', goalLine: '3.25', over: '3+25' },
@@ -1243,6 +1248,11 @@
     function onCls(k){ return picked[k] ? ' on' : ''; }
     MATCHES.forEach(function(m, i){
       if (!isTodayMatch(m, now)) return; // session window [D 12:00 → D+1 10:00] ပွဲတွေ (Pho Nov 21 13:56)
+      // v2.53 (Pho Nov 23 — ပြီးတဲ့ပွဲ/ပိတ်ပြီးပွဲ စာရင်းထဲက ပျောက်ရမယ်):
+      // ပိတ်ချိန် (kickoff − 5 မိနစ်) ကျော်သွားတဲ့ ပွဲကို ထိုးစာရင်းမှာ
+      // မပြတော့ဘူး — ထိုးလို့မရတော့တဲ့ပွဲ (မီးခိုးရောင် 'ပိတ်ပြီ') ကို
+      // စာရင်းထဲ ဆက်ထားတာ အဓိပ္ပာယ်မရှိလို့။ ရလဒ်ကတော့ Results မှာ ရှိတယ်။
+      if (isMatchClosed(m, now)) return;
       shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
@@ -1322,6 +1332,7 @@
     function rowFor(t){ return t === 'hcp-h' ? teams[0] : (t === 'hcp-a' ? teams[1] : null); }
     function clearBtn(o){
       delete sel[o.dataset.k];
+      delete (fbOddsAtPick[mode] || {})[o.dataset.k];
       o.classList.remove('on');
       var r = rowFor(o.dataset.k.split(':')[2]);
       if (r) r.classList.remove('on');
@@ -1354,6 +1365,8 @@
       else if (type === 'over') label = hh + ' VS ' + aa + ' · <span class="pk">ဂိုးပေါ် <span class="ro">' + m.over + '</span></span>';
       else label = hh + ' VS ' + aa + ' · <span class="pk">ဂိုးအောက် <span class="ro">' + mirrorOdds(m.over) + '</span></span>';
       sel[k] = label;
+      // v2.53: snapshot the odds AS SHOWN when tapped (for the odds-change check at bet time).
+      fbOddsAtPick[mode][k] = { hcp: m.hcp, over: m.over, ah_line: m.ah_line, gl_line: m.gl_line };
       btn.classList.add('on');
       var r = rowFor(type);
       if (r) r.classList.add('on');
@@ -1790,6 +1803,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.52"></script>
+<script src="wiring.js?v=2.53"></script>
 </body>
 </html>
