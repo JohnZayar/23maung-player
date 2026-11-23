@@ -1059,10 +1059,41 @@
     };
   }
 
+  // Pho Nov 23 — big matches on top (Player v2.52): league priority
+  // (England first, then Champions League, Europa, La Liga, Serie A,
+  // Bundesliga, Ligue 1). Substring matching so 5Dollar/iSports naming
+  // differences ("England Premier League" vs "English Premier League",
+  // "Italy Serie A" vs "Serie A") both work. Guards keep lookalikes out:
+  // Egyptian/Brazilian Premier/Serie A are NOT the big ones, and second
+  // divisions ("La Liga 2", "Bundesliga 2", "Ligue 2") fall through to
+  // the rest, which stay chronological by kickoff.
+  function bigLeagueRank(league) {
+    var s = ' ' + String(league || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+    if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league')) return 1;
+    if (/champions league/.test(s)) return 2;
+    if (/europa league/.test(s)) return 3;
+    if (/la liga/.test(s) && !/liga 2/.test(s)) return 4;
+    if (/serie a/.test(s) && !/brazil/.test(s)) return 5;
+    if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 6;
+    if (/ligue 1/.test(s)) return 7;
+    return 99;
+  }
+  M23.bigLeagueRank = bigLeagueRank;
+  function sortMatchesBigFirst(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var ra = bigLeagueRank(a.league), rb = bigLeagueRank(b.league);
+      if (ra !== rb) return ra - rb;
+      var ka = a.kickoff_utc || '', kb = b.kickoff_utc || '';
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return 0;
+    });
+  }
+  M23.sortMatchesBigFirst = sortMatchesBigFirst;
+
   function replaceMatches(mapped) {
     if (typeof MATCHES === 'undefined') return;
     MATCHES.length = 0;
-    Array.prototype.push.apply(MATCHES, mapped);
+    Array.prototype.push.apply(MATCHES, sortMatchesBigFirst(mapped));
     M23.fixtures = mapped;
     M23.mmByEn = {};
     mapped.forEach(function (m) {
