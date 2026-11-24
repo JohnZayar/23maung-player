@@ -49,6 +49,9 @@
     session2d: null,
     session3d: null,
     fixtures: [],       // scheduled fixtures (mapped MATCHES shape + ids)
+    prevOdds: {},      // v2.63 (Pho Nov 24 — odds-move flash): fixture id -> {hcp, over} last shown
+    movedOdds: {},     // v2.63: fixture id -> {hcp:bool, over:bool} odds that just moved (flash gold 3s)
+    movedTimer: null,  // v2.63: timeout that clears movedOdds after the flash
     finished: [],       // finished fixtures (for results)
     oddsByFixture: {},
     bets2d: [],
@@ -1146,9 +1149,39 @@
     });
   }
   M23.sortMatchesBigFirst = sortMatchesBigFirst;
+  // v2.63: renderMatches asks whether a fixture's hcp/over just moved.
+  M23.oddMoved = function (fid, kind) {
+    var e = (M23.movedOdds || {})[fid];
+    return !!(e && e[kind]);
+  };
+
+  // v2.63 (Pho Nov 24 — odds-move flash, like MOUNG556/Taing Kyaw): when a
+  // fixture's hcp or over CHANGES between refreshes, mark it so renderMatches
+  // flashes that odd gold for ~3s, then it returns to normal. First load
+  // never flashes (no previous odds to compare against).
+  function noteMovedOdds(mapped) {
+    var prev = M23.prevOdds || {};
+    var first = Object.keys(prev).length === 0;
+    var moved = {};
+    mapped.forEach(function (m) {
+      var p = prev[m.id];
+      if (!first && p) {
+        var h = (p.hcp !== m.hcp), o = (p.over !== m.over);
+        if (h || o) moved[m.id] = { hcp: h, over: o };
+      }
+      prev[m.id] = { hcp: m.hcp, over: m.over };
+    });
+    M23.prevOdds = prev;
+    M23.movedOdds = moved;
+    if (M23.movedTimer) { clearTimeout(M23.movedTimer); M23.movedTimer = null; }
+    if (Object.keys(moved).length) {
+      M23.movedTimer = setTimeout(function () { M23.movedOdds = {}; M23.movedTimer = null; }, 3200);
+    }
+  }
 
   function replaceMatches(mapped) {
     if (typeof MATCHES === 'undefined') return;
+    noteMovedOdds(mapped);
     MATCHES.length = 0;
     Array.prototype.push.apply(MATCHES, sortMatchesBigFirst(mapped));
     M23.fixtures = mapped;
