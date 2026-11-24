@@ -167,6 +167,24 @@
   // Pho Nov 22 ("အတိုမဟုတ်ဘူး"): the pyar is the fraction digits AS
   // WRITTEN — 2+5 = 5 pyar, NOT 50. Hundredths, with 50 mapped to 5.
   function pyarFromLine(line) { var p = Math.round((Math.abs(line) % 1) * 100); return p === 50 ? 5 : p; }
+  // Parse a Myanmar display odds string into { main, prar } — ported from
+  // Admin logic.js parseMyanmarOdds (Pho Nov 24): settlement follows the
+  // display the player saw ("2+30" -> main 2, prar 30), not the raw API line.
+  function parseMyanmarOdds(s) {
+    if (s === null || s === undefined) return null;
+    s = String(s).trim();
+    if (s === '' || s === '=') return { main: 0, prar: 0 };
+    if (s[0] === '=') {
+      var m0 = s.match(/^=([+-])(\d+)$/);
+      if (!m0) return null;
+      return { main: 0, prar: (m0[1] === '-' ? -1 : 1) * parseInt(m0[2], 10) };
+    }
+    var m = s.match(/^(\d+)(?:([+-])(\d+)|=)?$/);
+    if (!m) return null;
+    var main = parseInt(m[1], 10);
+    if (!m[2]) return { main: main, prar: 0 };
+    return { main: main, prar: (m[2] === '-' ? -1 : 1) * parseInt(m[3], 10) };
+  }
   // Pho Nov 17 (CORRECTED — "စျေးဖွင့်တဲ့ မိန်း ၁ဂိုး ၂ဂိုး ကိုတည်ရမှာပြီးမှ
   // ပြားယူ"): the MAIN line (integer part) is the base; the pyar applies
   // ONLY when the result lands exactly ON the main, IN THE LINE'S
@@ -177,12 +195,21 @@
   // RECEIVING side (Villa =75 draws 0:0 -> Villa loses 75, Sunderland
   // wins 75). BODY legs only — goal legs use evalGoalLine below. Ported
   // verbatim from Admin logic.js evalLine; DISPLAY ONLY.
-  function evalLine(line, margin) {
-    var pyar = pyarFromLine(line);
-    var frac = Math.abs(line) % 1;
-    var main = Math.trunc(Math.abs(line));
-    var adj = margin + line;
-    if (frac > 0) {
+  function evalLine(line, margin, mm) {
+    var pyar, main, hasPrar;
+    if (mm && typeof mm.main === 'number' && typeof mm.prar === 'number') {
+      main = mm.main;
+      pyar = Math.abs(mm.prar);
+      hasPrar = pyar > 0;
+    } else {
+      pyar = pyarFromLine(line);
+      var frac = Math.abs(line) % 1;
+      main = Math.trunc(Math.abs(line));
+      hasPrar = frac > 0;
+    }
+    var signedMain = line < 0 ? -main : main;
+    var adj = margin + signedMain;
+    if (hasPrar) {
       var pyarMargin = line < 0 ? main : -main;
       if (margin === pyarMargin) {
         var win = main === 0 ? line > 0 : line < 0;
@@ -198,13 +225,24 @@
   // loses the pyar and the under wins it. Away from the main, total vs
   // |gl_line| decides. Ported verbatim from Admin logic.js evalGoalLine;
   // DISPLAY ONLY.
-  function evalGoalLine(glLine, total, pick) {
-    var g = Math.abs(glLine);
-    var frac = g % 1;
-    var main = Math.trunc(g);
-    var pyar = pyarFromLine(glLine);
-    if (frac > 0 && total === main) {
-      var overWinsPyar = main === 0 ? glLine < 0 : glLine > 0;
+  function evalGoalLine(glLine, total, pick, mm) {
+    var main, pyar, hasPrar, g, signedPrar;
+    if (mm && typeof mm.main === 'number' && typeof mm.prar === 'number') {
+      main = mm.main;
+      pyar = Math.abs(mm.prar);
+      signedPrar = mm.prar;
+      hasPrar = pyar > 0;
+      g = main;
+    } else {
+      g = Math.abs(glLine);
+      var frac = g % 1;
+      main = Math.trunc(g);
+      pyar = pyarFromLine(glLine);
+      signedPrar = glLine;
+      hasPrar = frac > 0;
+    }
+    if (hasPrar && total === main) {
+      var overWinsPyar = main === 0 ? false : signedPrar > 0;
       var won = pick === 'over' ? overWinsPyar : !overWinsPyar;
       return { res: won ? 'halfWin' : 'halfLoss', pyar: pyar };
     }
@@ -223,16 +261,18 @@
     if (leg.kind === 'body') {
       var line = leg.ah_line;
       if (line == null) return null;
-      if (leg.pick === 'h') return evalLine(line, hg - ag);
-      if (leg.pick === 'a') return evalLine(-line, ag - hg);
+      var mm = parseMyanmarOdds(leg.hcp);
+      if (leg.pick === 'h') return evalLine(line, hg - ag, mm);
+      if (leg.pick === 'a') return evalLine(-line, ag - hg, mm);
       return null;
     }
     if (leg.kind === 'goal') {
       var gl = leg.gl_line;
       if (gl == null) return null;
       var total = hg + ag;
-      if (leg.pick === 'over') return evalGoalLine(gl, total, 'over');
-      if (leg.pick === 'under') return evalGoalLine(gl, total, 'under');
+      var mmg = parseMyanmarOdds(leg.over);
+      if (leg.pick === 'over') return evalGoalLine(gl, total, 'over', mmg);
+      if (leg.pick === 'under') return evalGoalLine(gl, total, 'under', mmg);
       return null;
     }
     return null;
