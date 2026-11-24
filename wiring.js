@@ -1099,13 +1099,17 @@
     };
   }
 
-  // Pho Nov 24 — league order like the competitors (Player v2.59):
+  // Pho Nov 24 — league order like the competitors (Player v2.59, fixed v2.60):
   // v2.59 (Pho Nov 24 20:21 — MOUNG556 + Taing Kyaw screenshots:
   // 'ချန်ပီယံလိဒ် ယူရိုပါလိဒ် လိဒ်၅လိဒ် ဖလားပွဲတွေ ဒုတိယတန်းလိဒ်တွေကအောက်မှာ'):
   // Champions League FIRST, then Europa League, then the 5 domestic leagues
   // (England, Spain, Italy, Germany, France), then other first-division
   // leagues, then cup matches, then second-tier leagues at the bottom.
   // This REVERSES v2.53 (5 leagues on top, Champions League below).
+  // v2.60 (Pho Nov 24 20:28 — 'ဒီလိဒ်တွေကနံမည်မကြီးဘူး'): rank 1 is the
+  // UEFA Champions League ONLY. AFC / GCC / Chinese "Champions League"
+  // competitions are NOT famous, so they fall through to rank 8 (other
+  // leagues) instead of sitting on top above the UEFA matches.
   // Substring matching so 5Dollar/iSports naming differences
   // ("England Premier League" vs "English Premier League",
   // "Italy Serie A" vs "Serie A") both work. Guards keep lookalikes out:
@@ -1116,7 +1120,7 @@
   // with the top-flight leagues.
   function bigLeagueRank(league) {
     var s = ' ' + String(league || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
-    if (/champions league/.test(s)) return 1;
+    if (/champions league/.test(s) && !/afc/.test(s) && !/gcc/.test(s) && !/chinese/.test(s)) return 1;
     if (/europa league/.test(s)) return 2;
     if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league') && !/southern premier/.test(s) && !/northern premier/.test(s) && !/national league/.test(s)) return 3;
     if (/la liga/.test(s) && !/liga 2/.test(s)) return 4;
@@ -1124,7 +1128,7 @@
     if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 6;
     if (/ligue 1/.test(s)) return 7;
     if (/ cup | pokal | copa | coppa | coupe | trophy | championships /.test(s)) return 9;
-    if (/ championship | serie b | liga 2 | segunda | bundesliga 2 | 2 bundesliga | ligue 2 | ligue 3 | eerste divisie | 1 lig | national league | southern premier | northern premier | beloften | division 2 | league 2 | league two | second division | super league 2 /.test(s)) return 10;
+    if (/ championship | serie b | liga 2 | segunda | bundesliga 2 | 2 bundesliga | ligue 2 | ligue 3 | eerste divisie | 1 lig | national league | southern premier | northern premier | beloften | division 2 | league two | second division | super league 2 /.test(s)) return 10;
     return 8;
   }
   M23.bigLeagueRank = bigLeagueRank;
