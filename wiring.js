@@ -1110,6 +1110,10 @@
   // UEFA Champions League ONLY. AFC / GCC / Chinese "Champions League"
   // competitions are NOT famous, so they fall through to rank 8 (other
   // leagues) instead of sitting on top above the UEFA matches.
+  // v2.61 (Pho Nov 24 20:32 — his exact order): UEFA CL, UEFA Europa,
+  // Premier, Serie A, La Liga, Bundesliga, Ligue 1, other first-division
+  // leagues, cups (FA Cup + all kinds), second-tier at the bottom.
+  // Serie A is 4th and La Liga 5th (v2.59/v2.60 had them reversed).
   // Substring matching so 5Dollar/iSports naming differences
   // ("England Premier League" vs "English Premier League",
   // "Italy Serie A" vs "Serie A") both work. Guards keep lookalikes out:
@@ -1123,8 +1127,8 @@
     if (/champions league/.test(s) && !/afc/.test(s) && !/gcc/.test(s) && !/chinese/.test(s)) return 1;
     if (/europa league/.test(s)) return 2;
     if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league') && !/southern premier/.test(s) && !/northern premier/.test(s) && !/national league/.test(s)) return 3;
-    if (/la liga/.test(s) && !/liga 2/.test(s)) return 4;
-    if (/serie a/.test(s) && !/brazil/.test(s)) return 5;
+    if (/serie a/.test(s) && !/brazil/.test(s)) return 4;
+    if (/la liga/.test(s) && !/liga 2/.test(s)) return 5;
     if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 6;
     if (/ligue 1/.test(s)) return 7;
     if (/ cup | pokal | copa | coppa | coupe | trophy | championships /.test(s)) return 9;
