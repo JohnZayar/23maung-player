@@ -1996,7 +1996,23 @@
       var rows = (b.legs || []).map(function (l) {
         var hn = ++n, an = ++n;
         var hh = teamMM(l.home), aa = teamMM(l.away);
-        var game = hn + '.' + hh + '(<span class="ro">' + esc(l.hcp || l.over || '') + '</span>) VS ' + an + '.' + aa;
+        var hOdds = '', aOdds = '', gOdds = '';
+        if (l.kind === 'goal') {
+          // Goal leg (Pho Nov 24): show the GOAL line, never the body hcp.
+          // Under shows the mirrored over, same as the voucher (buildFbLabel).
+          var go = l.pick === 'under' ? mirrorOdds(l.over || '') : (l.over || '');
+          gOdds = '(<span class="ro">' + esc(go) + '</span>)';
+        } else {
+          // Body leg (Pho Nov 24): the hcp goes next to the team hcp_side
+          // names — the giving team — not always next to the home team.
+          var hc = '(<span class="ro">' + esc(l.hcp || '') + '</span>)';
+          var side = l.hcp_side || null;
+          if (side === 'h') hOdds = hc;
+          else if (side === 'a') aOdds = hc;
+          else if (l.pick === 'h') hOdds = hc;
+          else aOdds = hc;
+        }
+        var game = hn + '.' + hh + hOdds + ' VS ' + an + '.' + aa + aOdds + gOdds;
         var f = fixById[l.fixture];
         var score = (f && f.home_goals != null) ? (f.home_goals + ':' + f.away_goals) : '-';
         var sel;
