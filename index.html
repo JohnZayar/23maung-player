@@ -304,7 +304,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.65 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.66 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1675,7 +1675,9 @@
       if (vouchTab === '1d') {
         // ဘောပွဲ: ထိုးတဲ့အကြိမ်တိုင်း သီးသန့် စာရွက် (NO.1, NO.2, ...); ဘော်ဒီ = ၁ပွဲချင်း ငွေ (per-pick amounts)
         out = items.map(function(p, i){
-          var rows = '<div class="vno">NO.' + (i + 1) + '</div>';
+          // Player v2.66 (Pho Nov 26): voucher header shows the bet type — NO.N · ဘော်ဒီ / NO.N · မောင်း.
+          var vtype = (p.kind === 'ဘော်ဒီ') ? 'ဘော်ဒီ' : (p.kind === 'မောင်း') ? 'မောင်း' : '';
+          var rows = '<div class="vno">NO.' + (i + 1) + (vtype ? ' · ' + vtype : '') + '</div>';
           if (p.kind === 'ဘော်ဒီ') {
             rows += p.picks.map(function(pk){
               return '<div class="vrow"><span>' + pk.label + '</span><span>' + fmt(pk.amt) + ' ကျပ်</span></div>';
@@ -1828,6 +1830,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.65"></script>
+<script src="wiring.js?v=2.66"></script>
 </body>
 </html>
