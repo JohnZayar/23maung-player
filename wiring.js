@@ -1928,7 +1928,9 @@
             var lg = legs[j];
             return lg ? fbSlipLeg(lg, fxById[lg.fixture]) : { league: '', kickoffTime: '', score: '–', tick: '' };
           };
-          var rows = '<div class="vno">NO.' + (dispNos[i] || meta.voucher_no || (i + 1)) + '</div>';
+          // Player v2.66 (Pho Nov 26): voucher header shows the bet type — NO.N · ဘော်ဒီ / NO.N · မောင်း.
+          var vtype = (p.kind === 'ဘော်ဒီ') ? 'ဘော်ဒီ' : (p.kind === 'မောင်း') ? 'မောင်း' : '';
+          var rows = '<div class="vno">NO.' + (dispNos[i] || meta.voucher_no || (i + 1)) + (vtype ? ' · ' + vtype : '') + '</div>';
           rows += '<div class="vslip-head">' + esc(fbSlipHeader(p, meta)) + '</div>';
           if (p.kind === 'ဘော်ဒီ') {
             rows += p.picks.map(function (pk, j) {
