@@ -193,29 +193,44 @@
   // ONLY when the result lands exactly ON the main, IN THE LINE'S
   // DIRECTION (line < 0 -> margin == +main; line > 0 -> margin == -main).
   // A result that deviates from the main is a FULL win / FULL loss. The
-  // LINE SIGN decides who wins the pyar: line < 0 -> halfWin, line > 0 ->
-  // halfLoss — EXCEPT at main 0 (Pho Nov 22): the pyar goes to the
-  // RECEIVING side (Villa =75 draws 0:0 -> Villa loses 75, Sunderland
-  // wins 75). BODY legs only — goal legs use evalGoalLine below. Ported
-  // verbatim from Admin logic.js evalLine; DISPLAY ONLY.
+  // SIGNED DISPLAY prar decides who wins the pyar when the leg has a
+  // stored Myanmar display (Pho Nov 26, NO.3): at main >= 1 the prar is
+  // applied to the GIVER — prar > 0 the giver wins it, prar < 0 the giver
+  // loses it ("3-35" giver-on-main loses 35; "2-100" giver-on-main loses
+  // the full stake). Without a display string the old API-line rule is
+  // kept (line < 0 -> halfWin). At main 0 the Nov 22 rule stands
+  // UNCHANGED: the pyar goes to the RECEIVING side (Villa =75 draws 0:0
+  // -> Villa loses 75, Sunderland wins 75). BODY legs only — goal legs
+  // use evalGoalLine below. Ported verbatim from Admin logic.js evalLine;
+  // DISPLAY ONLY.
   function evalLine(line, margin, mm) {
-    var pyar, main, hasPrar;
+    var pyar, main, hasPrar, signedPrar;
     if (mm && typeof mm.main === 'number' && typeof mm.prar === 'number') {
       main = mm.main;
       pyar = Math.abs(mm.prar);
+      signedPrar = mm.prar;
       hasPrar = pyar > 0;
     } else {
       pyar = pyarFromLine(line);
       var frac = Math.abs(line) % 1;
       main = Math.trunc(Math.abs(line));
       hasPrar = frac > 0;
+      signedPrar = null;
     }
     var signedMain = line < 0 ? -main : main;
     var adj = margin + signedMain;
     if (hasPrar) {
       var pyarMargin = line < 0 ? main : -main;
       if (margin === pyarMargin) {
-        var win = main === 0 ? line > 0 : line < 0;
+        // 0-main (Pho Nov 22): the pyar goes to the RECEIVING side — unchanged.
+        // Main >= 1 with a stored display (Pho Nov 26, NO.3): the SIGNED
+        // display prar decides — the pick wins iff (giving and prar > 0) or
+        // (receiving and prar < 0). Without a display string the old
+        // API-line rule (line < 0 -> pick wins) is kept.
+        var win;
+        if (main === 0) win = line > 0;
+        else if (signedPrar !== null) win = (line < 0) === (signedPrar > 0);
+        else win = line < 0;
         return { res: win ? 'halfWin' : 'halfLoss', pyar: pyar };
       }
     }
