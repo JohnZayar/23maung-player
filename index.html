@@ -304,7 +304,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.68 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.69 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1328,10 +1328,11 @@
     var btn = document.querySelector('button[data-k="' + k + '"]');
     if(btn) toggleOdd(btn);
   }
-  // မောင်း အဆ တွက်နည်း (Pho Nov 22, bet365 — Nov-17 ဇယားအစား):
-  // gross = ထိုးငွေ x Π(အဆ)၊ net = gross x 0.84 (အကောက် 16% အသေ)။
+  // မောင်း အဆ တွက်နည်း (Pho Nov 22, bet365 — Nov-17 ဇယားအစား; Nov 27 ပြင်):
+  // အမြတ် = ထိုးငွေ x Π(အဆ) x 0.84 (အကောက် 16% အသေ)၊ ပြန်ရငွေ = အမြတ် + အရင်း။
   // အနိုင်ပြည့် x2၊ ပြားနိုင် x(1+ပြား%)၊ ပြားရှုံး x(1−ပြား%)၊ push x1၊
-  // အရှုံးအပြည့် = မောင်း တစ်ခုလုံး ရှုံး (0)။ wiring.js နဲ့ အတူတူပဲ။
+  // အရှုံးအပြည့် = မောင်း တစ်ခုလုံး ရှုံး (0)။ push အကုန် = Nov 22 အတိုင်း
+  // 0.84 x ထိုးငွေ (ပြန်ရငွေ) — Pho ဆုံးဖြတ်ချက် စောင့်။ wiring.js နဲ့ အတူတူပဲ။
   var PARLAY_COMM_BET365 = 0.16;
   function parlayPayout(stake, legs){
     var ls = legs || [];
@@ -1343,7 +1344,9 @@
       var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : lg.res === 'push' ? 1 : 0;
       gross *= f;
     }
-    return Math.round(gross * (1 - PARLAY_COMM_BET365));
+    var profit = Math.round(gross * (1 - PARLAY_COMM_BET365));
+    if (ls.every(function (l) { return l.res === 'push'; })) return profit;
+    return profit + stake;
   }
   function toggleOdd(btn){
     var k = btn.dataset.k;
@@ -1830,6 +1833,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.67"></script>
+<script src="wiring.js?v=2.69"></script>
 </body>
 </html>
