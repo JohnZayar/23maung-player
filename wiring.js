@@ -136,11 +136,14 @@
   M23.mirrorOdds = mirrorOdds;
 
   // Parlay payout — bet365 method (Pho Nov 22, ORDERED — replaces the Nov-17
-  // table): gross = stake x Π(leg factors); net (TOTAL return, stake
-  // included) = gross x (1 - 0.16). The 16% is a FIXED commission on the
-  // gross (from Pho's 365maung sheet image) — NOT a Settings knob. Same
-  // method as Admin logic.js, ported verbatim. Leg factors: full win x2,
-  // pyar win x(1+pyar/100), pyar loss x(1-pyar/100), push x1, full loss = 0.
+  // table; CORRECTED Pho Nov 27): the calculated amount is the PROFIT, not
+  // the total return — profit = stake x Π(leg factors) x (1 - 0.16); payout
+  // (TOTAL the player receives) = profit + stake. The 16% is a FIXED
+  // commission on the gross (from Pho's 365maung sheet image) — NOT a
+  // Settings knob. Same method as Admin logic.js, ported verbatim. Leg
+  // factors: full win x2, pyar win x(1+pyar/100), pyar loss x(1-pyar/100),
+  // push x1, full loss = 0 (payout 0, profit -stake). ALL-PUSH keeps the
+  // Nov 22 literal payout (0.84 x stake) — flagged Nov 27, Pho to decide.
   // Display/settlement formula only — the frontend never credits winnings
   // itself.
   var PARLAY_COMM_BET365 = 0.16;
@@ -155,7 +158,11 @@
       var f = lg.res === 'win' ? 2 : lg.res === 'halfWin' ? (1 + lg.pyar / 100) : lg.res === 'halfLoss' ? (1 - lg.pyar / 100) : lg.res === 'push' ? 1 : 0;
       gross *= f;
     }
-    return Math.round(gross * (1 - PARLAY_COMM_BET365));
+    var profit = Math.round(gross * (1 - PARLAY_COMM_BET365));
+    // All-push keeps the Nov 22 literal PAYOUT (0.84 x stake) — returning
+    // profit + stake here would pay 1.84 x stake. Flagged Nov 27; Pho to decide.
+    if (ls.every(function (l) { return l.res === 'push'; })) return profit;
+    return profit + stake;
   }
   M23.parlayPayout = parlayPayout;
 
