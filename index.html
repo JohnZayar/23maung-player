@@ -304,7 +304,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.71 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.72 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -1270,12 +1270,12 @@
       shown++;
       if (m.league !== prevLeague) { html += '<div class="league">' + leagueFlag(m.league) + ' ' + m.league + '</div>'; prevLeague = m.league; }
       var closed = isMatchClosed(m);
-      // v2.62 (Pho Nov 24 — big-match colour): rank 1-7 (UCL, Europa, 5 leagues)
-      // get the teal 'big' bar; rank 8-10 (other leagues, cups, 2nd-tier) keep
-      // the green bar. M23 is undefined on the first mockup render (wiring.js
+      // v2.72 (Pho Nov 28 — Conference League 3rd): rank 1-8 (UCL, Europa,
+      // Conference, 5 leagues) get the teal 'big' bar; rank 9-11 (other
+      // leagues, cups, 2nd-tier) keep the green bar. M23 is undefined on the first mockup render (wiring.js
       // loads after this inline script), so guard it — the re-render after the
       // real fixtures load colours everything correctly.
-      var big = (typeof M23 !== 'undefined' && M23.bigLeagueRank) ? M23.bigLeagueRank(m.league) <= 7 : false;
+      var big = (typeof M23 !== 'undefined' && M23.bigLeagueRank) ? M23.bigLeagueRank(m.league) <= 8 : false;
       // v2.63 (odds-move flash): ' moved' on the button whose value just
       // changed (gold flash 3s, then normal). Guarded — M23 is undefined on
       // the first mockup render; no flash then.
@@ -1833,6 +1833,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.69"></script>
+<script src="wiring.js?v=2.70"></script>
 </body>
 </html>
