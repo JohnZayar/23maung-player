@@ -248,6 +248,7 @@
   .confirm-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; padding: 0; box-shadow: 0 -2px 10px rgba(0,0,0,.14); z-index: 9; display: flex; }
   .cb-trash { flex: 1; background: #e2e8f0; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
   .cb-ok { flex: 1; background: #1e3a5f; color: #fff; border: none; font-size: 26px; padding: 14px 0; cursor: pointer; font-family: inherit; }
+  .cb-ok:disabled { background: #cbd5e1; color: #64748b; }
   #scr-2d-confirm { padding-bottom: 140px; }
   .bet-actions { display: flex; gap: 8px; }
   .bet-actions button { flex: 1; border-radius: 10px; padding: 10px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; }
@@ -305,7 +306,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.74 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.75 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -373,7 +374,7 @@
         <button class="fb-step" onclick="adjAmt('fbAmt',-500)">−</button>
         <input id="fbAmt" class="fb-amt-input" type="number" value="" min="0" inputmode="numeric" placeholder="ငွေပမာဏ">
         <button class="fb-step" onclick="adjAmt('fbAmt',500)">+</button>
-        <button class="btn-red" onclick="placeFb('မောင်း')">ထိုးမည်</button>
+        <button class="btn-red" id="maungPlaceBtn" onclick="placeFb('မောင်း')">ထိုးမည်</button>
       </div>
     </div>
     
@@ -404,7 +405,7 @@
     </div>
     <div class="confirm-bar">
       <button class="cb-trash" onclick="clearAmtBody()">🗑</button>
-      <button class="cb-ok" onclick="confirmBetBody()">✓</button>
+      <button class="cb-ok" id="bodyConfirmBtn" onclick="confirmBetBody()">✓</button>
     </div>
   </div>
 
@@ -1838,6 +1839,6 @@
 </script>
   <!-- voucher calendar popup (Pho Nov 17, Player v2.10, MOUNG556-style) -->
   <div id="vouchCalOverlay" onclick="if(event.target===this)M23.closeVouchCal()"><div class="vcal-card" id="vouchCalCard"></div></div>
-<script src="wiring.js?v=2.71"></script>
+<script src="wiring.js?v=2.72"></script>
 </body>
 </html>

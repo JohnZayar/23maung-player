@@ -1811,7 +1811,28 @@
   };
 
   // --- football: parlay ------------------------------------------------------
+  // v2.75 (Pho Nov 28 — double-tap duplicate bet): a slow connection made the
+  // first tap look unregistered, so the user tapped again and the same bet went
+  // in twice (23M005 NO.1 + NO.2, identical). Lock the bet button on the first
+  // tap: the button disables + shows a "placing" label, and a shared flag drops
+  // any second placement while one is in flight. Unlocks if the bet fails so
+  // the user can retry; on success the picks are cleared anyway.
+  var placingFb = false;
+  function lockFbBtn(id, busyLabel) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    if (!b.dataset.origLabel) b.dataset.origLabel = b.textContent;
+    b.disabled = true;
+    b.textContent = busyLabel;
+  }
+  function unlockFbBtn(id) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = false;
+    if (b.dataset.origLabel) b.textContent = b.dataset.origLabel;
+  }
   window.placeFb = async function (kind) {
+    if (placingFb) return; // a football bet is already placing — ignore this tap
     if (M23.settings && M23.settings.football_enabled === false) { toast('ဘောပွဲ ပိတ်ထားတယ်'); return; }
     var sel = fbSel.maung;
     var keys = Object.keys(sel);
@@ -1844,6 +1865,8 @@
       if (isMatchClosed(m)) { toast('ပိတ်သွားပြီ'); return; }
       legs.push(legFromSelection(idx, type, v));
     }
+    placingFb = true;
+    lockFbBtn('maungPlaceBtn', 'တင်နေတယ်…');
     try {
       await placeBetFlow({
         collection: 'm23_bets_fb', kind: 'bet_fb', total: v, note: 'မောင်း ထိုး',
@@ -1858,10 +1881,12 @@
       toast('ထိုးပြီးပြီ — ' + (kind || 'မောင်း') + ' ' + keys.length + ' ပွဲ, ' + fmt(v) + ' ကျပ်');
       renderTotals();
     } catch (e) { toast((e && e.message) || 'ထိုးလို့ မရဘူး'); }
+    finally { placingFb = false; unlockFbBtn('maungPlaceBtn'); }
   };
 
   // --- football: body --------------------------------------------------------
   window.confirmBetBody = async function () {
+    if (placingFb) return; // a football bet is already placing — ignore this tap
     var keys = Object.keys(amtBodyMap);
     var total = 0;
     keys.forEach(function (k) { total += amtBodyMap[k] || 0; });
@@ -1886,6 +1911,8 @@
       if (isMatchClosed(m)) { toast('ပိတ်သွားပြီ'); return; }
       legs.push(legFromSelection(idx, type, picks[i].amt));
     }
+    placingFb = true;
+    lockFbBtn('bodyConfirmBtn', '…');
     try {
       await placeBetFlow({
         collection: 'm23_bets_fb', kind: 'bet_fb', total: total, note: 'ဘော်ဒီ ထိုး',
@@ -1900,6 +1927,7 @@
       renderTotals();
       go('scr-body');
     } catch (e) { toast((e && e.message) || 'ထိုးလို့ မရဘူး'); }
+    finally { placingFb = false; unlockFbBtn('bodyConfirmBtn'); }
   };
 
   // --- vouchers / totals -----------------------------------------------------
