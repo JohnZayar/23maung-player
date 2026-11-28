@@ -1111,6 +1111,10 @@
   // ---------------------------------------------------------------- fixtures
   function mapFixture(f) {
     var o = M23.oddsByFixture[f.id] || {};
+    // v2.73 (Pho Nov 28 — "စျေးမရှိရင် မပြနဲ့"): hasOdds marks whether
+    // this fixture has an odds row at all. A fixture with no odds row
+    // (e.g. Myanmar league — no source covers it) has no price, so it
+    // must not appear in the Player list. replaceMatches drops it.
     var dt = (f.date && f.time) ? { date: f.date, time: f.time } : dateTimeFromKickoff(f.kickoff_utc);
     return {
       id: f.id, api_id: f.api_id, league: f.league,
@@ -1120,7 +1124,8 @@
       status: f.status, home_goals: f.home_goals, away_goals: f.away_goals,
       hcpSide: o.hcp_side || 'h', hcp: o.hcp || '=', goalLine: o.goal_line || '',
       over: o.over || '=', ah_line: (o.ah_line != null ? o.ah_line : null),
-      gl_line: (o.gl_line != null ? o.gl_line : null)
+      gl_line: (o.gl_line != null ? o.gl_line : null),
+      hasOdds: !!M23.oddsByFixture[f.id]
     };
   }
 
@@ -1209,6 +1214,12 @@
 
   function replaceMatches(mapped) {
     if (typeof MATCHES === 'undefined') return;
+    // v2.73 (Pho Nov 28 — "စျေးမရှိရင် မပြနဲ့"): drop fixtures with no
+    // odds row before they reach MATCHES / M23.fixtures, so a match with
+    // no price never appears in the list and can never be bet on. The
+    // counts below therefore count priced matches only. A fixture whose
+    // odds arrive later (15-min refresh) appears on the next refresh.
+    mapped = (mapped || []).filter(function (m) { return m.hasOdds !== false; });
     noteMovedOdds(mapped);
     MATCHES.length = 0;
     Array.prototype.push.apply(MATCHES, sortMatchesBigFirst(mapped));
