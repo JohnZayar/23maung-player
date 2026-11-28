@@ -10,19 +10,19 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: "Myanmar Text", "Pyidaungsu", sans-serif; background: #e8e8e8; color: #222; }
-  .phone { max-width: 430px; margin: 0 auto; background: #e0f2fe; min-height: 100vh; position: relative; padding-bottom: 64px; }
+  .phone { max-width: 430px; margin: 0 auto; background: #e0f2fe; min-height: 100vh; position: relative; padding-bottom: 56px; }
   .demo-bar { background: #f59e0b; color: #3a2a00; text-align: center; font-size: 13px; padding: 6px 10px; font-weight: bold; }
   .phone.fb .demo-bar, .phone.fb .userbar { display: none; }
   .fb-top { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .fb-top h3 { font-size: 17px; flex: 1; }
   .fb-bal-amt { font-size: 16px; font-weight: bold; color: #0369a1; white-space: nowrap; }
-  .userbar { background: #0284c7; color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .userbar { background: #0284c7; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
   .avatar { width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #0284c7; font-weight: bold; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .userbar .uname { font-size: 18px; font-weight: bold; }
   .userbar .wallet { margin-left: auto; text-align: right; }
   .userbar .wallet .amt { font-size: 20px; font-weight: bold; color: #fde047; }
   .plus-btn { background: #fde047; color: #713f12; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 18px; font-weight: bold; cursor: pointer; vertical-align: middle; margin-left: 6px; }
-  .screen { display: none; padding: 14px 14px 10px; }
+  .screen { display: none; padding: 10px 12px 8px; }
   .screen.active { display: block; }
   .card { background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .card h3 { font-size: 16px; margin-bottom: 8px; }
@@ -35,8 +35,8 @@
   .badge.wait { background: #fef3c7; color: #92400e; }
   .badge.win { background: #dcfce7; color: #166534; }
   .badge.lose { background: #f1f5f9; color: #64748b; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; margin-bottom: 12px; }
-  .grid2 .game-btn { padding: 18px 10px; font-size: 20px; border-radius: 14px; white-space: nowrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 8px; margin-bottom: 12px; }
+  .grid2 .game-btn { padding: 12px 10px; font-size: 18px; border-radius: 14px; white-space: nowrap; }
   .game-btn { border: none; border-radius: 16px; padding: 26px 10px; font-size: 22px; font-weight: bold; font-family: inherit; cursor: pointer; color: #fde047; background: #1e3a5f; box-shadow: 0 3px 6px rgba(0,0,0,.2); }
   .game-btn small { display: block; font-size: 12px; font-weight: normal; opacity: .85; margin-top: 4px; color: #fff; }
   .game-btn:active { transform: scale(.97); }
@@ -162,7 +162,7 @@
      another with empty space beside them, as on Pho's phone). A stylesheet
      rule survives show() — the row stays one row on every tab switch. */
   #ballDateRow { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
-  .sect { font-size: 15px; font-weight: bold; color: #0e7490; margin: 16px 2px 8px; }
+  .sect { font-size: 15px; font-weight: bold; color: #0e7490; margin: 8px 2px 6px; }
   .league { font-size: 12px; font-weight: bold; color: #334155; margin: 4px 2px 2px; }
   .res-league { font-size: 13px; font-weight: bold; color: #1d4ed8; margin: 10px 2px 4px; }
   .res-match { background: #fff; border: 1px solid #94a3b8; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
@@ -260,9 +260,10 @@
   nav button svg { display: block; width: 20px; height: 20px; margin: 0 auto 2px; }
   .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 260px; background: #1e293b; color: #fff; padding: 11px 18px; border-radius: 24px; font-size: 14px; display: none; z-index: 20; max-width: 90%; text-align: center; }
   .note { background: #fef9c3; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #713f12; margin-bottom: 12px; }
-  .menu-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.08); cursor: pointer; border: none; width: 100%; font-family: inherit; text-align: left; }
-  .ribbon { display: inline-block; background: #d92b2b; color: #fff; font-weight: bold; font-size: 18px; padding: 6px 26px; border-radius: 4px; margin-top: -14px; position: relative; }
-  .prow { display: flex; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid #e2e8f0; font-size: 15px; text-align: left; }
+  .menu-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.08); cursor: pointer; border: none; width: 100%; font-family: inherit; text-align: left; }
+  .ribbon { display: inline-block; background: #d92b2b; color: #fff; font-weight: bold; font-size: 15px; padding: 4px 20px; border-radius: 4px; margin-top: 0; position: relative; }
+  .prof-head { display: flex; align-items: center; gap: 12px; text-align: left; }
+  .prow { display: flex; justify-content: space-between; padding: 5px 2px; border-bottom: 1px solid #e2e8f0; font-size: 15px; text-align: left; }
   .prow:last-of-type { border-bottom: none; }
   .phone.logged-out { padding-bottom: 0; }
   .phone.logged-out nav { display: none; }
@@ -282,13 +283,13 @@
   .login-remember input { width: 20px; height: 20px; }
   .login-signin { background: #d4af37; color: #16233f; border: none; border-radius: 12px; width: 100%; padding: 13px; font-size: 22px; font-weight: bold; font-family: inherit; cursor: pointer; }
   .login-reg { color: #fff; font-size: 13px; margin-top: 12px; display: inline-block; cursor: pointer; text-decoration: underline; }
-  .ticker { background: #fff; display: flex; align-items: center; gap: 8px; padding: 8px 10px; overflow: hidden; }
+  .ticker { background: #fff; display: flex; align-items: center; gap: 8px; padding: 6px 10px; overflow: hidden; }
   .ticker .tick-ic { color: #1e3a5f; font-weight: bold; flex-shrink: 0; }
   .ticker .tick-wrap { overflow: hidden; flex: 1; }
   .ticker .tick-text { display: inline-block; white-space: nowrap; color: #0e7490; font-size: 14px; animation: tickmove 24s linear infinite; }
   @keyframes tickmove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   /* Home banner slideshow (Pho Nov 19, Player v2.17): 3 photos, auto-rotate. */
-  .home-banner { position: relative; border-radius: 12px; overflow: hidden; margin: 10px 12px 0; box-shadow: 0 2px 10px rgba(0,0,0,.25); height: 170px; background: #16233f; }
+  .home-banner { position: relative; border-radius: 12px; overflow: hidden; margin: 10px 12px 0; box-shadow: 0 2px 10px rgba(0,0,0,.25); height: 120px; background: #16233f; }
   .home-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity .8s ease; }
   .home-banner img.on { opacity: 1; }
   .home-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 6px; z-index: 2; }
@@ -304,7 +305,7 @@
 </head>
 <body>
 <div class="phone" id="phoneBox">
-  <div class="demo-bar">23မောင်း v2.73 — 2D • 3D • ဘောလုံး</div>
+  <div class="demo-bar">23မောင်း v2.74 — 2D • 3D • ဘောလုံး</div>
   <div class="userbar" style="display:none">
     <div class="avatar" style="padding:0;overflow:hidden;background:#16233f"><img src="logo.png?v=2.9" alt="23မောင်း" style="width:46px;height:46px;object-fit:cover;display:block"></div>
     <div>
@@ -350,8 +351,8 @@
         <button type="button" onclick="homeSlide(2)" aria-label="3"></button>
       </div>
     </div>
-    <div class="ticker" style="margin:8px 12px 0"><span class="tick-ic">▶</span><div class="tick-wrap"><span class="tick-text">မင်္ဂလာပါ 23မောင်း မှကြိုဆိုပါတယ်။ ဆက်သွယ်ရန် Viber 09777650669 • မင်္ဂလာပါ 23မောင်း မှကြိုဆိုပါတယ်။ ဆက်သွယ်ရန် Viber 09777650669 • </span></div></div>
-    <div class="grid2" style="margin-top:10px">
+    <div class="ticker" style="margin:6px 12px 0"><span class="tick-ic">▶</span><div class="tick-wrap"><span class="tick-text">မင်္ဂလာပါ 23မောင်း မှကြိုဆိုပါတယ်။ ဆက်သွယ်ရန် Viber 09777650669 • မင်္ဂလာပါ 23မောင်း မှကြိုဆိုပါတယ်။ ဆက်သွယ်ရန် Viber 09777650669 • </span></div></div>
+    <div class="grid2" style="margin-top:8px">
       <button class="game-btn" onclick="go('scr-2d')">2D</button>
       <button class="game-btn" onclick="go('scr-3d')">3D</button>
       <button class="game-btn" id="homeBtnMaung" onclick="go('scr-maung')">မောင်း</button>
@@ -667,15 +668,19 @@
 
   <!-- user -->
   <div class="screen" id="scr-user">
-    <div class="card" style="text-align:center">
-      <div class="avatar" style="margin:0 auto;width:88px;height:88px;font-size:36px;background:#0284c7;color:#fff">U</div>
-      <div class="ribbon"></div>
-      <div style="font-size:15px;font-weight:bold;margin:14px 0 4px">ပရိုဖိုင် အသေးစိတ်</div>
-      <div style="width:120px;height:2px;background:#94a3b8;margin:0 auto 8px"></div>
+    <div class="card" style="text-align:center;padding:10px">
+      <div class="prof-head">
+        <div class="avatar" style="width:52px;height:52px;font-size:26px;background:#0284c7;color:#fff">U</div>
+        <div>
+          <div class="ribbon"></div>
+          <div style="font-size:14px;font-weight:bold;margin-top:6px">ပရိုဖိုင် အသေးစိတ်</div>
+        </div>
+      </div>
+      <div style="width:120px;height:2px;background:#94a3b8;margin:8px auto 6px"></div>
       <div class="prow"><span>အသုံးပြုသူကုဒ်</span><span>:</span><b>10001</b></div>
       <div class="prow"><span>အမည်</span><span>:</span><b></b></div>
       <div class="prow"><span>ပင်မလက်ကျန်ငွေ</span><span>:</span><b id="walletProf">50,000 ကျပ်</b></div>
-      <button class="btn-red" style="margin-top:12px" onclick="showLogin()">ထွက်မည်</button>
+      <button class="btn-red" style="margin-top:8px;padding:10px" onclick="showLogin()">ထွက်မည်</button>
     </div>
     <div class="sect">ရွေးချယ်စရာများ</div>
     <button class="menu-row" onclick="go('scr-log')"><span>ငွေစာရင်း မှတ်တမ်း</span><span>›</span></button>
@@ -1534,7 +1539,7 @@
       b.classList.toggle('on', b.dataset.scr === id || (b.dataset.scr === 'scr-home' && (id === 'scr-2d' || id === 'scr-2d-confirm' || id === 'scr-3d' || id === 'scr-3d-confirm' || id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-vouch')));
     });
     var box = document.getElementById('phoneBox');
-    if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-2d' || id === 'scr-3d' || id === 'scr-2d-confirm' || id === 'scr-3d-confirm');
+    if(box) box.classList.toggle('fb', id === 'scr-maung' || id === 'scr-body' || id === 'scr-body-confirm' || id === 'scr-results' || id === 'scr-2d' || id === 'scr-3d' || id === 'scr-2d-confirm' || id === 'scr-3d-confirm' || id === 'scr-user'); // v2.74: Settings hides top bars too (profile card already shows user+balance) so it fits one screen
     window.scrollTo(0,0);
     // v2.45 (Pho Nov 21 — keyboard stays closed): returning to a bet screen
     // never restores focus — the keyboard opens only when Pho taps an
