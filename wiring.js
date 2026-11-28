@@ -1139,6 +1139,11 @@
   // Premier, Serie A, La Liga, Bundesliga, Ligue 1, other first-division
   // leagues, cups (FA Cup + all kinds), second-tier at the bottom.
   // Serie A is 4th and La Liga 5th (v2.59/v2.60 had them reversed).
+  // v2.72 (Pho Nov 28 — Conference League 3rd, "နောက်မှာ"): UEFA Europa
+  // Conference League is rank 3, right after Europa (2) and before
+  // Premier (4). Everything below shifts +1: Premier 4, Serie A 5,
+  // La Liga 6, Bundesliga 7, Ligue 1 8, other first-division 9,
+  // cups 10, second-tier 11.
   // Substring matching so 5Dollar/iSports naming differences
   // ("England Premier League" vs "English Premier League",
   // "Italy Serie A" vs "Serie A") both work. Guards keep lookalikes out:
@@ -1150,15 +1155,16 @@
   function bigLeagueRank(league) {
     var s = ' ' + String(league || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
     if (/champions league/.test(s) && !/afc/.test(s) && !/gcc/.test(s) && !/chinese/.test(s)) return 1;
-    if (/europa league/.test(s)) return 2;
-    if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league') && !/southern premier/.test(s) && !/northern premier/.test(s) && !/national league/.test(s)) return 3;
-    if (/serie a/.test(s) && !/brazil/.test(s)) return 4;
-    if (/la liga/.test(s) && !/liga 2/.test(s)) return 5;
-    if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 6;
-    if (/ligue 1/.test(s)) return 7;
-    if (/ cup | pokal | copa | coppa | coupe | trophy | championships /.test(s)) return 9;
-    if (/ championship | serie b | liga 2 | segunda | bundesliga 2 | 2 bundesliga | ligue 2 | ligue 3 | eerste divisie | 1 lig | national league | southern premier | northern premier | beloften | division 2 | league two | second division | super league 2 /.test(s)) return 10;
-    return 8;
+    if (/europa league/.test(s) && !/conference/.test(s)) return 2;
+    if (/europa conference league/.test(s)) return 3;
+    if (/ premier league /.test(s) && (/ england /.test(s) || / english /.test(s) || s.trim() === 'premier league') && !/southern premier/.test(s) && !/northern premier/.test(s) && !/national league/.test(s)) return 4;
+    if (/serie a/.test(s) && !/brazil/.test(s)) return 5;
+    if (/la liga/.test(s) && !/liga 2/.test(s)) return 6;
+    if (/bundesliga/.test(s) && !/bundesliga 2/.test(s) && !/2 bundesliga/.test(s)) return 7;
+    if (/ligue 1/.test(s)) return 8;
+    if (/ cup | pokal | copa | coppa | coupe | trophy | championships /.test(s)) return 10;
+    if (/ championship | serie b | liga 2 | segunda | bundesliga 2 | 2 bundesliga | ligue 2 | ligue 3 | eerste divisie | 1 lig | national league | southern premier | northern premier | beloften | division 2 | league two | second division | super league 2 /.test(s)) return 11;
+    return 9;
   }
   M23.bigLeagueRank = bigLeagueRank;
   function sortMatchesBigFirst(list) {
